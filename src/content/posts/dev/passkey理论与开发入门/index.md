@@ -1,9 +1,10 @@
 ---
 title: Passkey理论与开发入门
 published: 2024-12-30 15:52:36
-tags: []
+tags: [Passkey]
 id: '670'
 image: ./img/passkey.jpeg
+category: 开发
 ---
 
 > 通行密钥比密码更易于使用且更安全。采用通行密钥为用户提供一种简单又安全的方式，让用户无需输入密码就能在各种平台上登录你的App 和网站。——Apple
@@ -24,15 +25,15 @@ sequenceDiagram
     participant 数据库
 
     Note over 用户,后台: HTTP
-    用户 ->> 后台: 1. \[注册\] 发送用户名A、密码A'
-    后台 ->> 数据库: 2. \[注册\] 保存A、A'
-    数据库 ->> 数据库: 3. \[注册\] 数据库保存A、A'
+    用户 ->> 后台: 1. [注册] 发送用户名A、密码A'
+    后台 ->> 数据库: 2. [注册] 保存A、A'
+    数据库 ->> 数据库: 3. [注册] 数据库保存A、A'
 
-    用户 ->> 后台: 1. \[登录\] 用户名A，密码X
-    后台 ->>+ 数据库: 2. \[登录\] 提供用户名A
-    数据库 ->>- 后台: 3. \[登录\] 返回正确的用户密码A'
-    后台 ->> 后台: 4. \[登录\] 比较A'和X
-    后台 ->> 用户: 5. \[登录\] 登录成功or失败
+    用户 ->> 后台: 1. [登录] 用户名A，密码X
+    后台 ->>+ 数据库: 2. [登录] 提供用户名A
+    数据库 ->>- 后台: 3. [登录] 返回正确的用户密码A'
+    后台 ->> 后台: 4. [登录] 比较A'和X
+    后台 ->> 用户: 5. [登录] 登录成功or失败
 ```
 
 优点：
@@ -41,7 +42,7 @@ sequenceDiagram
 
 风险：
 
-1.  用户$\\Leftrightarrow$后台采用明文通信，易遇到中间人攻击
+1.  用户$\Leftrightarrow$后台采用明文通信，易遇到中间人攻击
 2.  数据库一旦被拖库，所有用户的密码会立刻泄漏
 3.  后台能看到用户密码（你以为后台不会打日志吗）
 
@@ -55,20 +56,20 @@ sequenceDiagram
     participant 数据库
 
     Note right of 用户（前端）: HTTPS
-    用户（前端） ->> 后台: 1. \[注册\] 发送A、A'
-    后台 ->> 数据库: 2. \[注册\] A、B=hash(A')
-    数据库 ->> 数据库: 3. \[注册\] 数据库保存A、B
+    用户（前端） ->> 后台: 1. [注册] 发送A、A'
+    后台 ->> 数据库: 2. [注册] A、B=hash(A')
+    数据库 ->> 数据库: 3. [注册] 数据库保存A、B
 
-    用户（前端） ->> 后台: 1. \[登录\] 用户名A，X
-    后台 ->> 数据库: 2. \[登录\] 提供用户名A
-    数据库 ->> 后台: 3. \[登录\] 返回B
-    后台 ->> 后台: 4. \[登录\] 比较B和X
-    后台 ->> 用户（前端）: 5. \[登录\] 登录成功or失败
+    用户（前端） ->> 后台: 1. [登录] 用户名A，X
+    后台 ->> 数据库: 2. [登录] 提供用户名A
+    数据库 ->> 后台: 3. [登录] 返回B
+    后台 ->> 后台: 4. [登录] 比较B和X
+    后台 ->> 用户（前端）: 5. [登录] 登录成功or失败
 ```
 
 优点：
 
-1.  用户$\\Leftrightarrow$后台用HTTPS协议传输，一定程度缓解了中间人攻击的问题
+1.  用户$\Leftrightarrow$后台用HTTPS协议传输，一定程度缓解了中间人攻击的问题
 2.  数据库不明文存用户密码，被拖库后获取用户明文密码存在破解成本，可有效保护用户隐私
 
 风险：
@@ -90,17 +91,17 @@ sequenceDiagram
     participant 数据库
 
     Note right of 用户（前端）: HTTPS
-    用户（前端） ->> 后台: 1. \[注册\] 发送用户名A、密码A'
-    后台 ->> 后台: 2. \[注册\] 为新用户生成盐S
-    后台 ->> 数据库: 3. \[注册\] 将A、S存数据库里
-    后台 ->> 数据库: 4. \[注册\] 计算存储密码B=hash(S+A')
-    数据库 ->> 数据库: 3. \[注册\] 数据库保存A、B
+    用户（前端） ->> 后台: 1. [注册] 发送用户名A、密码A'
+    后台 ->> 后台: 2. [注册] 为新用户生成盐S
+    后台 ->> 数据库: 3. [注册] 将A、S存数据库里
+    后台 ->> 数据库: 4. [注册] 计算存储密码B=hash(S+A')
+    数据库 ->> 数据库: 3. [注册] 数据库保存A、B
 
-    用户（前端） ->> 后台: 1. \[登录\] 发送用户名A，密码X
-    后台 ->> 数据库: 2. \[登录\] 提供用户名A
-    数据库 ->> 后台: 3. \[登录\] 返回B、S
-    后台 ->> 后台: 4. \[登录\] 比较hash(S+X)==B
-    后台 ->> 用户（前端）: 5. \[登录\] 登录成功or失败
+    用户（前端） ->> 后台: 1. [登录] 发送用户名A，密码X
+    后台 ->> 数据库: 2. [登录] 提供用户名A
+    数据库 ->> 后台: 3. [登录] 返回B、S
+    后台 ->> 后台: 4. [登录] 比较hash(S+X)==B
+    后台 ->> 用户（前端）: 5. [登录] 登录成功or失败
 ```
 
 优点：
@@ -235,14 +236,14 @@ sequenceDiagram
     Attacker ->> Attacker: 把信息修改为“今早8点开会”
     Attacker ->> Bob: 发送信息“今早8点开会”和签名
     Bob ->> Bob: 验证签名（用公钥验证）
-NOte over Bob: 签名验证失败，说明有人在中间篡改了信息
+    Note over Bob: 签名验证失败，说明有人在中间篡改了信息
 ```
 
 签名算法（以RSA为例）：
 
-$假设公钥D，私钥E，信息为M，则签名signature=rsa\\\_encode(E, hash(M))$
+$\text{\text{假设公钥}D\text{，私钥}E\text{，信息为}M\text{，则签名}}signature=rsa_encode(E, hash(M))$
 
-$验证签名，rsa\\\_decode(D, signature) == hash(M)$
+$\text{验证签名，}rsa_decode(D, signature) == hash(M)$
 
 ### RSA详解
 
@@ -268,21 +269,21 @@ $验证签名，rsa\\\_decode(D, signature) == hash(M)$
 
 欧拉函数举例：
 
-$\\phi(6)=2$ ，因为1, 2, 3, 4, 5里只有1, 5与6互质
+$\phi(6)=2$ ，因为1, 2, 3, 4, 5里只有1, 5与6互质
 
-$\\phi(7)=1$，因为7是质数，1-6与7互质
+$\phi(7)=1$，因为7是质数，1-6与7互质
 
-$\\phi(8)=4$，因为1-8里只有1, 3, 5, 7与8互质
+$\phi(8)=4$，因为1-8里只有1, 3, 5, 7与8互质
 
 ##### 欧拉定理推广
 
 1.  若a与b互质，则有
 
-$\\phi(n) = \\phi(a \\cdot b) = \\phi(a) \\cdot \\phi(b)$
+$\phi(n) = \phi(a \cdot b) = \phi(a) \cdot \phi(b)$
 
 2.  若n为质数，则有
 
-$\\phi(n) = n - 1$
+$\phi(n) = n - 1$
 
 ##### 总结：我们现在有的武器（基础理论）
 
@@ -290,63 +291,63 @@ $\\phi(n) = n - 1$
 
 若 $a$ 和 $n$ 为正整数，且 $a$ 和 $n$ 互质，则  
 $$  
-a^{\\varphi(n)}\\equiv 1\\pmod{n}  
+a^{\varphi(n)}\equiv 1\pmod{n}  
 $$
 
 2.  欧拉定理推广1:
 
 若 $a$ 和 $b$ 互质，则  
 $$  
-\\phi(n) = \\phi(a \\cdot b) = \\phi(a) \\cdot \\phi(b)  
+\phi(n) = \phi(a \cdot b) = \phi(a) \cdot \phi(b)  
 $$
 
 3.  欧拉定理推广2:
 
 若n为质数，则  
 $$  
-\\phi(n) = n - 1  
+\phi(n) = n - 1  
 $$
 
 4.  费马小定理（实际为欧拉定理推导，可结合 $(1)(3)$ 看 ）
 
 若 $a$ 和 $p$ 为正整数，且 $a$ 与 $p$ 互质，$p$ 为质数，则  
 $$  
-a^{p-1}\\equiv 1\\pmod{p}  
+a^{p-1}\equiv 1\pmod{p}  
 $$
 
 #### 密钥生成
 
-第一步 - 输出 $p$ 、 $q$ 、 $n$、$\\phi(n)$
+第一步 - 输出 $p$ 、 $q$ 、 $n$、$\phi(n)$
 
 取一质数 $p$、$q$，结合 $(2)(3)$，有
 
 $n=pq$
 
-$\\phi(n)=\\phi(p \\cdot q)=\\phi(p) \\cdot \\phi(q) =(p-1)(q-1)$
+$\phi(n)=\phi(p \cdot q)=\phi(p) \cdot \phi(q) =(p-1)(q-1)$
 
 举例：
 p=61, q=53
 则n=61\*53=3233
-\\phi(n)=60\*52=3120
+\phi(n)=60\*52=3120
 
 第二步 - 输出 $e$
 
-选一整数 $e$，满足 $1 < e < \\phi(n)$ ，且 $e$ 与 $\\phi(n)$ 互质（计算机里一般取65535）
+选一整数 $e$，满足 $1 < e < \phi(n)$ ，且 $e$ 与 $\phi(n)$ 互质（计算机里一般取65535）
 
 举例：
 e=17
 
 第三步 - 输出 $d$
 
-计算出整数 $d$，使得 $ed \\equiv 1 \\pmod{\\phi(n)}$
+计算出整数 $d$，使得 $ed \equiv 1 \pmod{\phi(n)}$
 
 怎么计算？
 
-$ed \\equiv 1 \\pmod{\\phi(n)}$
+$ed \equiv 1 \pmod{\phi(n)}$
 
-$\\iff ed = k\\cdot\\phi(n)+1，k为整数且k>0$
+$\iff ed = k\cdot\phi(n)+1\text{，}k\text{为整数且}k>0$
 
-$\\iff d = \\frac{k\\cdot\\phi(n)+1}{e}$
+$\iff d = \frac{k\cdot\phi(n)+1}{e}$
 
 举例：
 d=2753
@@ -366,9 +367,9 @@ $n$ 的长度：密钥长度（比如RSA1024，1024指的是 $n$ 有1024位）
 
 假设原始数据为 $m$，密文为 $c$，则
 
-公钥加密：$m^{e} \\equiv c \\pmod{n}$
+公钥加密：$m^{e} \equiv c \pmod{n}$
 
-私钥解密：$c^{d} \\equiv m \\pmod{n}$
+私钥解密：$c^{d} \equiv m \pmod{n}$
 
 注：$m < n$，否则需分段加密
 
@@ -378,56 +379,56 @@ $n$ 的长度：密钥长度（比如RSA1024，1024指的是 $n$ 有1024位）
 
 等价于：已知 $n$，$e$，能否知道 $d$？
 
-已知：$ed \\equiv 1 \\pmod{\\phi(n)}$，所以需要知道 $\\phi(n)$
+已知：$ed \equiv 1 \pmod{\phi(n)}$，所以需要知道 $\phi(n)$
 
-已知：$\\phi(n)=(p-1)(q-1)$，所以需要知道 $p$，$q$
+已知：$\phi(n)=(p-1)(q-1)$，所以需要知道 $p$，$q$
 
-已知：$n=p \\cdot q$，所以需要对 $n$ 做质因数分解
+已知：$n=p \cdot q$，所以需要对 $n$ 做质因数分解
 
 如果 $p$，$q$ 取得比较大（比如1000位），那么 $n$ 至少有 $999+999=1998$位，以人类目前的科学水平不可能对如此大的数做质因数分解。
 
 #### 正确性证明
 
-$已知：m^{e} \\equiv c \\pmod{n}……..(a)$
+$\text{已知：}m^{e} \equiv c \pmod{n}……..(a)$
 
-$求证：c^{d} \\equiv m \\pmod{n}……..(b)$
+$\text{求证：}c^{d} \equiv m \pmod{n}……..(b)$
 
-$解：$
+$\text{解：}$
 
-$(b)中带入(a)，有m \\equiv c^{d} \\pmod{n} \\equiv m ^ {ed} \\pmod{n} \\equiv m^{k\\phi(n) + 1}\\pmod{n}$
+$(b)\text{中带入}(a)\text{，有}m \equiv c^{d} \pmod{n} \equiv m ^ {ed} \pmod{n} \equiv m^{k\phi(n) + 1}\pmod{n}$
 
-$即需证 m \\equiv m^{k\\phi(n) + 1}\\pmod{n}$
+$\text{即需证} m \equiv m^{k\phi(n) + 1}\pmod{n}$
 
-$case1: m、n互质$
+$case1: m\text{、}n\text{互质}$
 
-$根据欧拉定理(1)，有$
+$\text{\text{根据欧拉定理}(1)\text{，有}}$
 
-$m^{\\varphi(n)}\\equiv 1\\pmod{n} \\iff (m^{\\varphi(n)})^k \\cdot m \\equiv 1^k \\cdot m \\pmod{n} \\iff m \\equiv m^{k\\phi(n) + 1}\\pmod{n}$
+$m^{\varphi(n)}\equiv 1\pmod{n} \iff (m^{\varphi(n)})^k \cdot m \equiv 1^k \cdot m \pmod{n} \iff m \equiv m^{k\phi(n) + 1}\pmod{n}$
 
-$秒了$
+$\text{秒了}$
 
-$case2:m、n不互质$
+$case2:m\text{、}n\text{不互质}$
 
-$已知，n=p \\cdot q，而m、n不互质。则必有整数\\lambda，使得m= \\lambda p或 m = \\lambda q。p、q可互换，这里先考虑m=\\lambda p$
+$\text{已知，}n=p \cdot q\text{，而}m\text{、}n\text{不互质。则必有整数}\lambda\text{，使得}m= \lambda p\text{或} m = \lambda q\text{。}p\text{、}q\text{可互换，这里先考虑}m=\lambda p$
 
-$由欧拉定理(1)，有$
+$\text{由欧拉定理}(1)\text{，有}$
 
-$m^{\\phi(q)} \\equiv 1 \\pmod{q}$
+$m^{\phi(q)} \equiv 1 \pmod{q}$
 
-$\\iff (m^{k\\phi(q)})^{\\phi(p)} \\equiv (1^{k\\phi(q)})^{\\phi(p)} \\pmod{q} \\equiv 1 \\pmod{q}$
+$\iff (m^{k\phi(q)})^{\phi(p)} \equiv (1^{k\phi(q)})^{\phi(p)} \pmod{q} \equiv 1 \pmod{q}$
 
-$注意到左边(m^{k\\phi(q)})^{\\phi(p)}=m^{k\\phi(n)}，说明有m^{k\\phi(n)}\\equiv1\\pmod{q}，则总有一个正整数r，使得m^{k\\phi(n)}=rq+1$
+$\text{注意到左边}(m^{k\phi(q)})^{\phi(p)}=m^{k\phi(n)}\text{，说明有}m^{k\phi(n)}\equiv1\pmod{q}\text{，则总有一个正整数}r\text{，使得}m^{k\phi(n)}=rq+1$
 
-$两边同时乘m=\\lambda p，有m^{k\\phi(n)+1}=\\lambda rpq+\\lambda p=\\lambda rn+\\lambda p$
+$\text{两边同时乘}m=\lambda p\text{，有}m^{k\phi(n)+1}=\lambda rpq+\lambda p=\lambda rn+\lambda p$
 
-$等价于m^{k\\phi(n)+1}\\equiv \\lambda p \\pmod{n} \\equiv m \\pmod{n}$
+$\text{等价于}m^{k\phi(n)+1}\equiv \lambda p \pmod{n} \equiv m \pmod{n}$
 
-$证毕$  
+$\text{证毕}$  
 
 #### 大质数的获取
 
 1.  随机生成一个大数 $x$
-2.  判断 $x$ 是否为质数，一般选用 $Miller–Rabin素性测试$ 算法判断
+2.  判断 $x$ 是否为质数，一般选用 $Miller-Rabin\text{素性测试}$ 算法判断
 
 [素数](https://oi-wiki.org/math/number-theory/prime/#millerrabin-%E7%B4%A0%E6%80%A7%E6%B5%8B%E8%AF%95)
 
@@ -460,7 +461,7 @@ sequenceDiagram
     后台 ->> 后台: 存储用户公钥
 ```
 
-2\. 用Passkey登录
+2. 用Passkey登录
 
 ```mermaid
 sequenceDiagram
@@ -491,36 +492,39 @@ WebAuthN是W3C标准。客户端很多Passkey的实现也是基于WebAuthN。[MD
 
 后台->客户端:
 
+```json
 {  
-    "challenge": "gVQ2n5FCAcksuEefCEgQRKJB\_xfMF4rJMinTXSP72E8",  
-    "rp": {  
-        "name": "Passkey Example",  
-        "id": "example.com"  
-    },  
-    "user": {  
-        "id": "GOVsRuhMQWNoScmh\_cK02QyQwTolHSUSlX5ciH242Y4",  
-        "name": "Michael",  
-        "displayName": "Michael"  
-    },  
-    "pubKeyCredParams": \[  
-        {  
-            "alg": -7,  
-            "type": "public-key"  
-        }  
-    \],  
-    "timeout": 60000,  
-    "attestation": "none",  
-    "excludeCredentials": \[  
-    \],  
-    "authenticatorSelection": {  
-        "authenticatorAttachment": "platform",  
-        "requireResidentKey": true,  
-        "residentKey": "required"  
-    },  
-    "extensions": {  
-        "credProps": true  
-    }  
+  "challenge": "gVQ2n5FCAcksuEefCEgQRKJB_xfMF4rJMinTXSP72E8",  
+  "rp": {  
+    "name": "Passkey Example",  
+    "id": "example.com"  
+   },  
+  "user": {  
+    "id": "GOVsRuhMQWNoScmh_cK02QyQwTolHSUSlX5ciH242Y4",  
+    "name": "Michael",  
+    "displayName": "Michael"  
+   },  
+  "pubKeyCredParams": [  
+     {  
+      "alg": -7,  
+      "type": "public-key"  
+     }  
+   ],  
+  "timeout": 60000,  
+  "attestation": "none",  
+  "excludeCredentials": [  
+   ],  
+  "authenticatorSelection": {  
+    "authenticatorAttachment": "platform",  
+    "requireResidentKey": true,  
+    "residentKey": "required"  
+   },  
+  "extensions": {  
+    "credProps": true  
+   }  
 }
+
+```
 
 [W3C: PublicKeyCredentialCreationOptions](https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredentialCreationOptions)
 
@@ -538,24 +542,30 @@ WebAuthN是W3C标准。客户端很多Passkey的实现也是基于WebAuthN。[MD
 
 客户端->后台：
 
+```json
 {  
-  "id": "base64url-encoded-credential-id",  
-  "type": "public-key",  
-  "response": {  
-    "clientDataJSON": "base64url-encoded-client-data-json",  
-    "attestationObject": "base64url-encoded-attestation-object"  
+ "id": "base64url-encoded-credential-id",  
+ "type": "public-key",  
+ "response": {  
+  "clientDataJSON": "base64url-encoded-client-data-json",  
+  "attestationObject": "base64url-encoded-attestation-object"  
   }  
 }
+```
 
 [W3C: AuthenticatorAttestationResponse](https://developer.mozilla.org/en-US/docs/Web/API/AuthenticatorAttestationResponse)
 
 *   id：凭据id
 *   clientDataJSON：base64编码的json数据，json为：
-    *   {  
-         "type": "webauthn.create", // 或 "webauthn.get"  
-         "challenge": "base64url-encoded-challenge",  
-         "origin": "https://example.com"  
-        }
+
+```json5
+{  
+"type": "webauthn.create", // 或 "webauthn.get"  
+"challenge": "base64url-encoded-challenge",  
+"origin": "https://example.com"  
+}
+```
+
 *   attestationObject：CBOR格式结构体，包含：
     *   authData：凭据信息，CBOR格式的Authenticator data，包含公钥、域信息等[W3C: Authenticator data](https://developer.mozilla.org/en-US/docs/Web/API/Web_Authentication_API/Authenticator_data)
     *   fmt
@@ -571,12 +581,14 @@ WebAuthN是W3C标准。客户端很多Passkey的实现也是基于WebAuthN。[MD
 
 后台->客户端:
 
+```json
 {  
-    "challenge": "x1wRuShyI4k7BqYJi60kVk-clJWsPnBGgh\_7z-W9QYk",  
-    "allowCredentials": \[\],  
-    "timeout": 60000,  
-    "rpId": "example.com"  
+  "challenge": "x1wRuShyI4k7BqYJi60kVk-clJWsPnBGgh_7z-W9QYk",  
+  "allowCredentials": [],  
+  "timeout": 60000,  
+  "rpId": "example.com"  
 }
+```
 
 [W3C: PublicKeyCredentialRequestOptions](https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredentialRequestOptions)
 
@@ -591,17 +603,19 @@ WebAuthN是W3C标准。客户端很多Passkey的实现也是基于WebAuthN。[MD
 
 客户端 -> 后台：
 
-{  
-  "id": "t2hF9lEjZ-8K5oFIZw1wQA",  
-  "rawId": "dDJoRjlMamp6LTdLNWhGSVp3MXdRQQ",  
-  "type": "public-key",  
-  "response": {  
-    "clientDataJSON": "eyJjaGFsbGVuZ2UiOiJjaGFsbGVuZ2VleGFtcGxlIiwib3JpZ2luIjoiaHR0cHM6Ly93d3cuZXhhbXBsZS5jb20iLCJ0eXBlIjoid2ViYXV0aG4uZ2V0In0",  
-    "authenticatorData": "YWdhdXRoZW50aWNhdG9yRGF0YS5leGFtcGxl",  
-    "signature": "c2lnbmF0dXJlZXhhbXBsZQ",  
-    "userHandle": "dXNlcklkZXh0cmFhcmVv"  
-  }  
+```json
+{
+  "id": "t2hF9lEjZ-8K5oFIZw1wQA",
+  "rawId": "dDJoRjlMamp6LTdLNWhGSVp3MXdRQQ",
+  "type": "public-key",
+  "response": {
+    "clientDataJSON": "eyJjaGFsbGVuZ2UiOiJjaGFsbGVuZ2VleGFtcGxlIiwib3JpZ2luIjoiaHR0cHM6Ly93d3cuZXhhbXBsZS5jb20iLCJ0eXBlIjoid2ViYXV0aG4uZ2V0In0",
+    "authenticatorData": "YWdhdXRoZW50aWNhdG9yRGF0YS5leGFtcGxl",
+    "signature": "c2lnbmF0dXJlZXhhbXBsZQ",
+    "userHandle": "dXNlcklkZXh0cmFhcmVv"
+  }
 }
+```
 
 [W3C: AuthenticatorAssertionResponse](https://developer.mozilla.org/en-US/docs/Web/API/AuthenticatorAssertionResponse)
 
@@ -621,15 +635,15 @@ WebAuthN是W3C标准。客户端很多Passkey的实现也是基于WebAuthN。[MD
 
 配置`associated domains`，`https://{域名}/.well-known/apple-app-site-association`的内容为：
 
-{  
-    ...  
-    "webcredentials": {  
-        "apps": \[  
-            "{团队ID}.{bundleId}"  
-        \]  
-    }  
-}  
-​
+```json
+{
+  "webcredentials": {  
+    "apps": [  
+      "{团队ID}.{bundleId}"  
+     ]  
+   }  
+}
+```
 
 怎么获取团队id？
 
@@ -672,21 +686,23 @@ Android14及以后，用户可以安装并使用其它密码管理器了。用�
 
 配置`Digital Asset Links`，`https://{域名}/.well-known/assetlinks.json`的内容为：
 
-\[  
-    {  
-        "relation": \[  
-            "delegate\_permission/common.handle\_all\_urls",  
-      "delegate\_permission/common.get\_login\_creds"  
-        \],  
-        "target": {  
-            "namespace": "android\_app",  
-            "package\_name": "{包名}",  
-            "sha256\_cert\_fingerprints": \[  
-                "{指纹签名}"  
-            \]  
-        }  
-    }  
-\]
+```json
+[  
+   {  
+    "relation": [  
+      "delegate_permission/common.handle_all_urls",  
+    "delegate_permission/common.get_login_creds"  
+     ],  
+    "target": {  
+      "namespace": "android_app",  
+      "package_name": "{包名}",  
+      "sha256_cert_fingerprints": [  
+        "{指纹签名}"  
+       ]  
+     }  
+   }  
+]
+```
 
 很简单，无论是登录还是注册，将后台传的数据透传给系统即可
 
@@ -700,20 +716,22 @@ OPPO自己搞了个SDK：
 
 配置`fido2-trusted-facets`，`https://{域名}/.well-known/fido2-trusted-facets.json`的内容为：
 
-\[  
-    {  
-        "relation": \[  
-            "delegate\_permission/common.get\_login\_creds"  
-        \],  
-        "target": {  
-            "namespace": "android\_app",  
-            "package\_name": "{包名}",  
-            "sha256\_cert\_fingerprints": \[  
-                "{指纹签名}"  
-            \]  
-        }  
-    }  
-\]
+```json
+[  
+   {  
+    "relation": [  
+      "delegate_permission/common.get_login_creds"  
+     ],  
+    "target": {  
+      "namespace": "android_app",  
+      "package_name": "{包名}",  
+      "sha256_cert_fingerprints": [  
+        "{指纹签名}"  
+       ]  
+     }  
+   }  
+]
+```
 
 OPPO Passkey API和Credential Manager差不多。
 

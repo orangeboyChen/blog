@@ -1,15 +1,14 @@
 ---
 title: Git的一些奇技淫巧
 published: 2023-10-23 10:50:24
-tags: []
+tags: [git]
 id: '620'
 comments: false
 category: 开发
 image: ./img/git.jpg
 ---
 
-##   
-Q：你在branch1上开发，代码没写完（还没commit），这时候来了个紧急需求需要你立刻开发：
+## Q：你在branch1上开发，代码没写完（还没commit），这时候来了个紧急需求需要你立刻开发：
 
 <!-- more -->
 

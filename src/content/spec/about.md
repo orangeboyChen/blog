@@ -1,9 +1,32 @@
-# About
-This is the demo site for [Fuwari](https://github.com/saicaca/fuwari).
+## 关于我
+每天都想着去上学的打工牛马
 
+## 经历
+- 2007–2019：在深圳上学
+- 2019–2023：武汉大学
+- 2023–至今：腾讯视频移动端开发
+
+## 我在哪里
+深圳
+
+## 我会什么
+- 略懂一点前端
+- 略懂一点后端
+- 略懂一点客户端
+- 略懂一点CI/CD
+- 不懂AI
+
+## 会什么语言
+AI会什么，我就会什么
+
+## 我喜欢什么
+- 💻
+- 📱
+- 🏐
+- 📷
+
+## 跟我相关的项目
+::github{repo="whu-ham/whu-ham.github.io"}
+
+## 怎么找我
 ::github{repo="orangeboyChen/blog"}
-
-> ### Sources of images used in this site
-> - [Unsplash](https://unsplash.com/)
-> - [星と少女](https://www.pixiv.net/artworks/108916539) by [Stella](https://www.pixiv.net/users/93273965)
-> - [Rabbit - v1.4 Showcase](https://civitai.com/posts/586908) by [Rabbit_YourMajesty](https://civitai.com/user/Rabbit_YourMajesty)

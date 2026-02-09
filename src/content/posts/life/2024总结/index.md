@@ -1,7 +1,7 @@
 ---
 title: 2024年度总结
 published: 2024-12-31 03:02:09
-tags: []
+tags: [年度总结]
 id: '678'
 category: 生活
 image: ./img/Textutred-Dark-Wallpaper-background.jpg
@@ -316,7 +316,7 @@ SZTU印象：嗯，设施不错，就是有点冷清。
 
  [GitHub](https://github.com/ "Github")
 
-[XiaoMi/ha\_xiaomi\_home](https://github.com/XiaoMi/ha_xiaomi_home)
+[XiaoMi/ha_xiaomi_home](https://github.com/XiaoMi/ha_xiaomi_home)
 
 新学的技术栈：
 

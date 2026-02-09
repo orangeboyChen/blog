@@ -243,3 +243,82 @@ a.card-github.fetch-error
   transition-property: all
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1)
   transition-duration: 0.15s
+
+a.card-url
+  display: block
+  background: var(--license-block-bg)
+  position: relative
+  margin: 0.5rem 0
+  padding: 1rem 1.25rem
+  color: var(--tw-prose-body)
+  border-radius: var(--radius-large)
+  text-decoration-thickness: 0px
+  text-decoration-line: none
+
+  &:hover
+    background-color: var(--btn-regular-bg-hover)
+
+    .url-title
+      color: var(--tw-prose-headings)
+
+  &:active
+    scale: .98
+    background-color: var(--btn-regular-bg-active);
+
+  .url-title
+    font-size: 1.05rem
+    font-weight: 600
+    line-height: 1.4
+    color: var(--tw-prose-headings)
+    margin-bottom: 0.35rem
+
+  .url-desc
+    font-size: 0.95rem
+    font-weight: 300
+    line-height: 1.45
+    margin-bottom: 0.6rem
+    color: var(--tw-prose-body)
+
+  .url-meta
+    display: flex
+    align-items: center
+    gap: 0.5rem
+    font-size: 0.85rem
+    opacity: 0.85
+
+  .url-favicon
+    width: 1rem
+    height: 1rem
+    border-radius: 0.25rem
+
+a.card-github-pr
+  .gc-pr-number
+    font-size: 0.9rem
+    font-weight: 600
+    color: var(--tw-prose-body)
+
+  .gc-pr-infobar
+    gap: 1rem
+
+  .gc-pr-state, .gc-pr-author, .gc-pr-updated
+    font-weight: 500
+    font-size: 0.875rem
+    opacity: 0.9
+
+  .gc-pr-state
+    padding: 0.15rem 0.45rem
+    border-radius: 0.4rem
+    border: 1px solid var(--line-divider)
+    letter-spacing: 0.02em
+
+  &[data-state="open"] .gc-pr-state
+    color: oklch(0.62 0.14 150)
+    border-color: oklch(0.62 0.14 150)
+
+  &[data-state="closed"] .gc-pr-state
+    color: oklch(0.62 0.14 25)
+    border-color: oklch(0.62 0.14 25)
+
+  &[data-state="merged"] .gc-pr-state
+    color: oklch(0.62 0.14 300)
+    border-color: oklch(0.62 0.14 300)

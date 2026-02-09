@@ -1,9 +1,10 @@
 ---
 title: 被Xcode15坑麻了
 published: 2023-09-28 01:38:51
-tags: []
+tags: [iOS]
 id: '612'
 image: ./img/WX20230928-014116@2x.png
+category: 开发
 ---
 
 昨天苹果刚发布Sonoma，我就兴致冲冲去升级了，升级后果不其然，Xcode14不能用了，必须升级到15才能用。

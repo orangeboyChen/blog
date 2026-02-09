@@ -1,7 +1,7 @@
 ---
 title: Kotlin Native编译原理02 - 简单「深入」理解Objective-C运行时（一）
 published: 2025-05-29 23:00:02
-tags: []
+tags: [Kotlin, iOS]
 id: '924'
 category: 开发
 image: ./img/1_iDQ77Lohz3F3tx2Fml1msg.png
@@ -23,11 +23,7 @@ KMP（Kotlin Multiplatform）的前身是KMM（Kotlin Multiplatform Mobile）。
 
 这些都是关键性问题，轻则导致内存泄漏，重则引发应用崩溃。要是不解决好，谁敢在实际工程里用Kotlin Native？所以，目前Kotlin Native项目里充斥着许多跟Objective-C有关的桥接代码。要真正理解这些代码的作用，就要了解Objective-C的运行流程，也就是Objective-C运行时。
 
-<!-- more -->
-
-# Objective-C
-
-## 何为运行时？
+## 何为Objective-C运行时？
 
 运行时的概念很广泛，G老师对这个问题也是一头雾水。但通常来说运行时可统称为三个概念：
 
@@ -47,7 +43,7 @@ _造句：printf需要依赖运行时_
 
 我们先上个程序，very simple：
 
-```Objective-c
+```objective-c
 // test.m
 #include <stdio.h>
 
@@ -90,7 +86,7 @@ clang: error: linker command failed with exit code 1 (use -v to see invocation)
 
 编译成功了。说明在整个编译过程里，肯定是clang or 汇编器 or 链接器往我们的程序塞了Objective-C的符号。但这些符号是一用Objective-C方式编译就会偷偷加上吗？我们再看看下面的C程序，very simple
 
-```C
+```c
 #include <stdio.h>
 int main() {
 printf("Hello world!");
@@ -123,7 +119,7 @@ Objective-C是C的**超集**。换句话说，Objective-C编译器必须有C编�
 
 回到刚刚的Objective-C代码：
 
-```Objective-C
+```objective-c
 // test.m
 #include <stdio.h>
 
@@ -319,14 +315,14 @@ L_OBJC_IMAGE_INFO:
 
 着重关注下`[MyClass alloc]` 和`[obj init]`的逻辑：
 
-*   \[MyClass alloc\] ：调用`_objc_alloc` ，参数为`_OBJC_CLASSLIST_REFERENCES` 符号值，实际就是`_OBJC_CLASS_$_MyClass符号`
-*   \[obj init\]：调用`_objc_msgSend$sayHello`，参数为`[MyClass alloc]` 创建的对象地址
+*   [MyClass alloc] ：调用`_objc_alloc` ，参数为`_OBJC_CLASSLIST_REFERENCES` 符号值，实际就是`_OBJC_CLASS_$_MyClass符号`
+*   [obj init]：调用`_objc_msgSend$sayHello`，参数为`[MyClass alloc]` 创建的对象地址
 
 这时候有意思的地方就来了：
 
 对于第一个，我们可以直接判断`_objc_alloc` 原型就在objc4里。至于传参具体是什么，我们可以通过objc4的源码分析；
 
-对于第二个，汇编代码里没有`_objc_msgSend$sayHello` 符号，所以最后是怎么通过编译的？并且，我们从前面的编译结果可以得知，`_objc_msgSend$sayHello` 并不是外部符号，那么这个符号是从哪冒出来的？
+对于第二个，汇编代码里没有`_objc_msgSend$sayHello` \text{符号，所以最后是怎么通过编译的？并且，我们从前面的编译结果可以得知，}`_objc_msgSend$sayHello` 并不是外部符号，那么这个符号是从哪冒出来的？
 
 恭喜你，发现了**Improve app size and runtime performance**
 
@@ -355,11 +351,11 @@ ldr x1, [x1, selector sayHello地址]
 bl _objc_msgSend
 ```
 
-这样如果`[objc sayHello]` 被多次调用，按照原来的方式就需要执行3\*n条指令，而按照新的方式只需执行3+n条指令，获得了3倍的性能提升！当然，这个优化需要前端跟链接器一起做。前端负责把`[objc sayHello]` 编译成`bl _objc_msgSend$sayHello` ，链接器负责生成`_objc_msgSend$sayHello` 的跳板代码。
+这样如果`[objc sayHello]` 被多次调用，按照原来的方式就需要执行3\*n条指令，而按照新的方式只需执行3+n条指令，获得了3倍的性能提升！当然，这个优化需要前端跟链接器一起做。前端负责把`[objc sayHello]` 编译成`bl _objc_msgSend$sayHello` \text{，链接器负责生成}`_objc_msgSend$sayHello` 的跳板代码。
 
 所以代价是什么？代价是作为coder，我们不能使用类似`_objc_msgSend$xxxx` 这样的符号了。
 
-链接器新增objc\_stubs具体代码：[https://github.com/apple-oss-distributions/ld64/blob/main/src/ld/passes/objc\_stubs.cpp](https://github.com/apple-oss-distributions/ld64/blob/main/src/ld/passes/objc_stubs.cpp)
+链接器新增objc_stubs具体代码：[https://github.com/apple-oss-distributions/ld64/blob/main/src/ld/passes/objc_stubs.cpp](https://github.com/apple-oss-distributions/ld64/blob/main/src/ld/passes/objc_stubs.cpp)
 
 那么，`_objc_msgSend$sayHello`实际是什么呢？我们接着往下看：
 
@@ -401,9 +397,9 @@ Contents of section __DATA,__objc_selrefs:
 
 ### 启动objc4
 
-现在我们打开objc4源代码，看下\_objc\_msgSend的原型：
+现在我们打开objc4源代码，看下_objc_msgSend的原型：
 
-```Objective-c
+```objective-c
 // message.h
 OBJC_EXPORT id _Nullable
 objc_msgSend(id _Nullable self, SEL _Nonnull op, ...)
@@ -412,9 +408,9 @@ objc_msgSend(id _Nullable self, SEL _Nonnull op, ...)
 
 原来，iOS开发里所谓的SEL/方法选择子，实际是方法名指针
 
-接着，我们再来看下\_objc\_alloc的原型：
+接着，我们再来看下_objc_alloc的原型：
 
-```Objective-c
+```objective-c
 // objc-internal.h
 OBJC_EXPORT id _Nullable
 objc_alloc(Class _Nullable cls)
@@ -423,7 +419,7 @@ objc_alloc(Class _Nullable cls)
 
 `Class` 和 `id` 是什么呢？
 
-```Objective-c
+```objective-c
 // objc-private.h
 typedef struct objc_class *Class;
 typedef struct objc_object *id;
@@ -490,19 +486,19 @@ struct class_ro_t {
 并且可以确定在文件映像里，这几个结构体存在以下持有关系：
 
 flowchart LR
-objc\_object --> objc\_class
-  objc\_class --> class\_ro\_t
-  class\_ro\_t --> method\_list\_t
+objc_object --> objc_class
+  objc_class --> class_ro_t
+  class_ro_t --> method_list_t
 
 并且，`class_ro_t`里存着：
 
 *   超类
-*   类方法表（method\_list\_t）
+*   类方法表（method_list_t）
 *   成员变量偏移表（ivars）
-*   实现协议表（protocol\_list\_t）
-*   属性表（property\_list\_t）
+*   实现协议表（protocol_list_t）
+*   属性表（property_list_t）
 
-`[obj sayHello]` 只调用了`bl _objc_msgSend$sayHello` 就能跳到`-[MyClass sayHello]` 符号上。所以很大可能，obj\_msgSend里会先读取`objc_object`里的`isa`，从`method_list_t` 里找到`sayHello` 方法的实际跳转地址。
+`[obj sayHello]` 只调用了`bl _objc_msgSend$sayHello` 就能跳到`-[MyClass sayHello]` 符号上。所以很大可能，obj_msgSend里会先读取`objc_object`里的`isa`，从`method_list_t` 里找到`sayHello` 方法的实际跳转地址。
 
 `objc_class` 位于可写空间。所以有没有一种可能，在运行时我们把`objc_class`里的`class_ro_t` 整个换掉，这样就可以在运行时调整一个类的方法实现了，并且可以给一个类动态添加属性、实现协议？
 
@@ -531,7 +527,7 @@ Contents of section __TEXT,__objc_methlist:
  1000008f0 10ffffff                             ....
 ```
 
-我们的方法表不应该在\_\_objc\_const节么，为什么编译后就飞到\_\_objc\_methlist节了呢？
+我们的方法表不应该在__objc_const节么，为什么编译后就飞到__objc_methlist节了呢？
 
 并且，原先`__OBJC_$_INSTANCE_METHODS_MyClass` 只有32个字节，而在二进制里怎么就只有20字节了呢？
 
@@ -543,7 +539,7 @@ Contents of section __TEXT,__objc_methlist:
 
 相对方法表其实很容易理解。原先方法表里的每一项结构为：
 
-```Objective-c
+```objective-c
 struct bigSigned {
         SEL __ptrauth_objc_sel name;
         const char * ptrauth_method_list_types types;
@@ -553,7 +549,7 @@ struct bigSigned {
 
 现在改为：
 
-```Objective-c
+```objective-c
 struct small {
         // The name field either refers to a selector (in the shared
         // cache) or a selref (everywhere else).
@@ -590,17 +586,17 @@ name、types和imp的地址改成地址偏移值，每项用一个字去存储�
 
 ### 只读内存
 
-先来一个小测试：文件映像里DATA\_CONST段是只读的。这个段映射到内存后，谁去保证这段内存是只读的？如果程序非法写入/执行内存，那么是谁去阻止的？
+先来一个小测试：文件映像里DATA_CONST段是只读的。这个段映射到内存后，谁去保证这段内存是只读的？如果程序非法写入/执行内存，那么是谁去阻止的？
 
 有人觉得是这样：
 
 ```mermaid
 graph LR
-  A\[程序执行: br 0x12345678\] --1.执行--> B\[CPU\]
-  B --2.询问地址是否合法--> C\[内核\]
+  A[程序执行: br 0x12345678] --1.执行--> B[CPU]
+  B --2.询问地址是否合法--> C[内核]
   C --3.1地址合法--> B
-  B --4.执行跳转--> D\[结束\]
-  C --3.2地址不合法--> E\[关闭程序并报错\]
+  B --4.执行跳转--> D[结束]
+  C --3.2地址不合法--> E[关闭程序并报错]
 ```
 
 图里涉及到内核，说明必然存在用户态→内核态→用户态的切换过程。内核↔用户态切换需要保存和恢复上下文，开销非常大。考虑到一个程序里有成千上万条的内存相关指令，如果每次操作内存都需要切换用户/内核态，**那电脑岂不就会卡到爆炸**？
@@ -659,7 +655,7 @@ attributes (none)
 
 [dyldMain.cpp#L1241](https://github.com/apple-oss-distributions/dyld/blob/main/dyld/dyldMain.cpp#L1241)
 
-```Objective-C
+```objective-c
 // make __DATA_CONST read-only (kernel maps it r/w)
     const Header* dyldMH = (const Header*)dyldMA;
     dyldMH->forEachSegment(^(const Header::SegmentInfo& segInfo, bool& stop) {
@@ -690,15 +686,15 @@ attributes (none)
 
 [syscalls.master#L132](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/kern/syscalls.master#L132)
 
-```C
+```c
 74AUE_MPROTECTALL{ int mprotect(caddr_ut addr, size_ut len, int prot) NO_SYSCALL_STUB; }
 ```
 
 BSD层的`mprotect` 主要做一些参数校验，接着跳到OSMFK内核的`mach_vm_protect`
 
-[kern\_mman.c#L1187](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/kern/kern_mman.c#L1187)
+[kern_mman.c#L1187](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/kern/kern_mman.c#L1187)
 
-```C
+```c
 // kern_mman.c
 int
 mprotect(__unused proc_t p, struct mprotect_args *uap, __unused int32_t *retval)
@@ -744,9 +740,9 @@ return EINVAL;
 
 > `mac_proc_check_mprotect` 用来检查mmap的权限。iOS上程序无法通过mmap获取可执行内存，就是在这里判断的
 
-[vm\_user.c#L292](https://github.com/apple-oss-distributions/xnu/blob/main/osfmk/vm/vm_user.c#L292)
+[vm_user.c#L292](https://github.com/apple-oss-distributions/xnu/blob/main/osfmk/vm/vm_user.c#L292)
 
-```C
+```c
 // vm_user.c
 kern_return_t
 mach_vm_protect(
@@ -775,9 +771,9 @@ return vm_map_protect(map,
 
 `vm_map_protect` 做了什么呢？首先找到指定的`vm_map_entry`（描述某块内存的作用），并检验入参合法性，如有需要合并/分裂`vm_map_entry`，然后调用`pmap_protect` 刷新页表权限
 
-[vm\_map.c#L5641](https://github.com/apple-oss-distributions/xnu/blob/main/osfmk/vm/vm_map.c#L5641)
+[vm_map.c#L5641](https://github.com/apple-oss-distributions/xnu/blob/main/osfmk/vm/vm_map.c#L5641)
 
-```C
+```c
 /*
  *vm_map_protect:
  *
@@ -815,7 +811,7 @@ pmap_protect_options(map->pmap,
 
 [pmap.c#L5413](https://github.com/apple-oss-distributions/xnu/blob/main/osfmk/arm/pmap/pmap.c#L5413)
 
-```C
+```c
 MARK_AS_PMAP_TEXT vm_map_address_t
 pmap_protect_options_internal(
 pmap_t pmap,
@@ -904,7 +900,7 @@ write_pte_fast(pte_p, tmplate);
 
 我们写一个程序看看：
 
-```Objective-C
+```objective-c
 #include <stdio.h>
 #import <Foundation/Foundation.h>
 
@@ -921,7 +917,7 @@ int main() {
 编译程序，把断点打到load符号上：
 
 ```shell
-(lldb) br set -r "\\+\\[MyClass load\\]"
+(lldb) br set -r "\\+\[MyClass load\]"
 Breakpoint 2: where = test`+[MyClass load], address = 0x0000000100000868
 (lldb) r
 (lldb) bt
@@ -938,9 +934,9 @@ Breakpoint 2: where = test`+[MyClass load], address = 0x0000000100000868
     frame #9: 0x00000001988c6b00 dyld`start + 5924
 ```
 
-调用链从dyld到objc4的`load_images`。为什么dyld会调`load_images`呢？终于，我们在\_objc\_init找到一处可疑的地方：
+调用链从dyld到objc4的`load_images`。为什么dyld会调`load_images`呢？终于，我们在_objc_init找到一处可疑的地方：
 
-```Objective-C++
+```objective-c
 // objc4
 // objc-os.mm
 ...
@@ -994,9 +990,9 @@ void _objc_init(void)
     frame #4: 0x00000001988e2c18 dyld`invocation function for block in dyld4::Loader::findAndRunAllInitializers(dyld4::RuntimeState&) const + 444
 ```
 
-发现一条调用链路：libSystem → libdispatch → libobjc#\_objc\_init的调用链。我们打开libSystem的源码，查看libSystem\_initializer函数，果然：
+发现一条调用链路：libSystem → libdispatch → libobjc#_objc_init的调用链。我们打开libSystem的源码，查看libSystem_initializer函数，果然：
 
-```C
+```c
 // init.c
 // libsyscall_initializer() initializes all of libSystem.dylib
 // <rdar://problem/4892197>
@@ -1016,7 +1012,7 @@ libdispatch_init();
 
 所以，`_objc_init`的实际调用时机是libSystem载入时。而`load_image` 呢？我们接着分析，在dyld的`Loader::runInitializersBottomUp` 方法里会逐个调用动态库的初始化函数 。
 
-```C
+```c
 // This recusively walks the image graph.  There is the potential for cycles.  To break cycles, if the image is delayed, we
 // use the visitedDelayed set to track if the image was already visited.  If the image is not delayed, we use
 // beginInitializers() to mark the image visited.
@@ -1074,7 +1070,7 @@ void Loader::runInitializersBottomUp(RuntimeState& state, Array<const Loader*>& 
 
 剩下的逻辑就简单啦：
 
-```Objective-C++
+```objective-c
 // objc4
 // objc-runtime-new.mm
 void
@@ -1102,8 +1098,8 @@ load_images(const struct _dyld_objc_notify_mapped_info* info)
 }
 ```
 
-*   prepare\_load\_methods: 提取当前映像（动态库）所有类的load方法（IMP）到缓存里。当然，这里会第一次初始化（realize）所有Category的父类。
-*   call\_load\_methods: 遍历调用缓存里的load方法
+*   prepare_load_methods: 提取当前映像（动态库）所有类的load方法（IMP）到缓存里。当然，这里会第一次初始化（realize）所有Category的父类。
+*   call_load_methods: 遍历调用缓存里的load方法
 
 `_objc_init`做了什么呢？逻辑不难，让G老师帮我们总结下：
 
@@ -1137,7 +1133,7 @@ autiza: [https://developer.arm.com/documentation/dui0801/g/A64-General-Instructi
 
 来看段very simple的代码：
 
-```C
+```c
 #include <stdio.h>
 #include <stdint.h>
 #include <ptrauth.h>
@@ -1164,7 +1160,7 @@ raw_var_ptr=0x102e61428 signed_ptr=0x77230102e61428 authed_ptr=0x102e61428
 
 指针认证有什么用呢？我们来看一个例子，来模拟对象的isa指针被强行修改：
 
-```Objective-C
+```objective-c
 #import <Foundation/Foundation.h>
 
 @implementation HackClass: NSObject
@@ -1217,10 +1213,10 @@ hacker sayHello
 
 *   CVE-2016-4655 (IOHIDFamily UAF)[https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2016-4655](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2016-4655)
 *   CVE-2017-13861（IOKit UAF）[https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2017-13861](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2017-13861)
-*   CVE-2019-8605（sock\_puppet）[https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-8605](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-8605)
+*   CVE-2019-8605（sock_puppet）[https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-8605](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-8605)
 *   等等
 
-开启PA后，UAF的难度直线上升，所以在Objective-C运行时里，Apple把PA技术用到了**能用到的几乎所有地方（包括ISA指针、method\_list等）**。不过，PA并不是绝对安全的，本身也会遭受侧信道攻击，详见这篇MIT的论文：[https://dl.acm.org/doi/pdf/10.1145/3470496.3527429。](https://dl.acm.org/doi/pdf/10.1145/3470496.3527429%E3%80%82)
+开启PA后，UAF的难度直线上升，所以在Objective-C运行时里，Apple把PA技术用到了**能用到的几乎所有地方（包括ISA指针、method_list等）**。不过，PA并不是绝对安全的，本身也会遭受侧信道攻击，详见这篇MIT的论文：[https://dl.acm.org/doi/pdf/10.1145/3470496.3527429。](https://dl.acm.org/doi/pdf/10.1145/3470496.3527429%E3%80%82)
 
 并且PA还有一堆的缺陷待解决，每次解决导致了PA的ABI不稳定，因此尽管苹果发了
 
@@ -1232,7 +1228,7 @@ hacker sayHello
 
 先来看一段代码：
 
-```Objective-C
+```objective-c
 #include <Foundation/Foundation.h>
 
 int main(int argc, const char * argv[]) {
@@ -1297,7 +1293,7 @@ num1和num2最高位为1，显然这不是正常的内存地址。为什么呢�
 
 所以可以引出下面著名代码：
 
-```Objective-C
+```objective-c
 #include <Foundation/Foundation.h>
 
 int main(int argc, const char * argv[]) {
@@ -1317,7 +1313,7 @@ num=15, array=(null)
 
 还有这个，注意需开启ARC：
 
-```Objective-C
+```objective-c
 // 以下代码会有Runtime Error
 #include <Foundation/Foundation.h>
 
@@ -1349,6 +1345,6 @@ int main(int argc, const char * argv[]) {
 
 而对Tagged Pointer调用`objc_release` ，在函数开头就被guard return掉了。所以如果`+[NSString stringWithFormat:]` 返回的是Tagged Pointer，那么虽然这里存在data race，但异常只局限在操作内存这一逻辑操作，并不会导致程序出现异常。
 
-## objc\_msgSend
+## objc_msgSend
 
 下一章讲

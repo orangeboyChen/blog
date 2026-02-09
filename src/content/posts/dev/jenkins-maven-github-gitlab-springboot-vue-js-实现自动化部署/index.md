@@ -1,19 +1,19 @@
 ---
 title: Jenkins + Maven + Github/Gitlab + Springboot/Vue.js 实现自动化部署
 published: 2020-09-01 17:32:53
-tags: []
+tags: ['CI/CD']
 id: '318'
 image: ./img/u17860265912745054076fm26gp0.png
+category: 开发
 ---
 
 ## Jenkins的安装
 
 [Jenkins用户文档地址](https://www.jenkins.io/zh/doc/)
 
-<!-- more -->
-
 Jenkins在docker环境下安装非常简单。只需要执行命令
 
+```shell
 #创建网络
 docker network create jenkins
 
@@ -28,17 +28,18 @@ docker run
   -d 
   -p 8080:8080 
   -p 50000:50000 
-  -v jenkins-data:/var/jenkins\_home 
+  -v jenkins-data:/var/jenkins_home 
   -v /var/run/docker.sock:/var/run/docker.sock 
   jenkinsci/blueocean
+```
 
-*   \-p 8080:8080 docker映射端口号，这里是访问Jenkins的端口号
-*   \-v jenkins-data:/var/jenkins\_home 卷，Jenkins持久数据存储地址
-*   \-v /var/run/docker.sock:/var/run/docker.sock 卷，映射宿主机的docker到容器内部
+* \-p 8080:8080 docker映射端口号，这里是访问Jenkins的端口号
+* \-v jenkins-data:/var/jenkins_home 卷，Jenkins持久数据存储地址
+* \-v /var/run/docker.sock:/var/run/docker.sock 卷，映射宿主机的docker到容器内部
 
 ## Jenkins的环境配置
 
-### 1\. 打开服务器Jenkins的网页
+### 1. 打开服务器Jenkins的网页
 
 如果你没有更改端口号，那么这个地址是**你的服务器ip:8080**。注意服务器需要打开相应的安全组配置和防火墙设置。然后你会看到这个
 
@@ -50,7 +51,7 @@ docker run
 
 进入Jenkins的docker容器，找到密码，复制到上面即可。
 
-### 2\. 选择插件，一般选安装推荐的插件。
+### 2. 选择插件，一般选安装推荐的插件。
 
 ![](img/20190626083014442.jpg)
 
@@ -62,7 +63,7 @@ docker run
 
 你可以选择创建管理员账户，也可以不创建，直接点击“使用admin账户继续”。这时候登录名是admin，密码是你刚刚复制的一长串字符。
 
-### 3\. 配置镜像地址
+### 3. 配置镜像地址
 
 点击**系统管理->插件管理->高级**
 
@@ -74,17 +75,19 @@ docker run
 
 升级站点改成清华大学镜像地址
 
+```text
 http://mirrors.tuna.tsinghua.edu.cn/jenkins/updates/update-center.json
+```
 
 然后点击“提交”
 
-### 4\. 安装相应的插件
+### 4. 安装相应的插件
 
 选择**可选插件**
 
 ![](img/GOQXWQ5_7N51J7U@T1-1024x577.png)
 
-如果你需要部署springboot项目，需要安装Maven插件；
+如果你需要部署SpringBoot项目，需要安装Maven插件；
 
 如果你需要部署NodeJS项目（如Vue.js），需要安装nodejs插件；
 
@@ -94,7 +97,7 @@ http://mirrors.tuna.tsinghua.edu.cn/jenkins/updates/update-center.json
 
 安装完成后记得重启Jenkins。
 
-### 5\. 配置全局工具
+### 5. 配置全局工具
 
 进入**系统管理->全局工具配置**
 
@@ -102,11 +105,13 @@ http://mirrors.tuna.tsinghua.edu.cn/jenkins/updates/update-center.json
 
 进入docker容器中，输入
 
-echo $JAVA\_HOME
+```shell
+echo $JAVA_HOME
+```
 
 复制JAVA路径，备用。
 
-在刚刚的页面点击“新增JDK”，并取消“自动安装”。在JAVA\_HOME输入刚刚复制的路径。
+在刚刚的页面点击“新增JDK”，并取消“自动安装”。在JAVA_HOME输入刚刚复制的路径。
 
 ![](img/H1_TI2RUCWEJ9S8-1024x329.png)
 
@@ -146,15 +151,17 @@ echo $JAVA\_HOME
 
 最后记得保存。
 
-## 创建一个储存在Github的Maven（Springboot）项目流水线
+## 创建一个储存在Github的Maven（SpringBoot）项目流水线
 
 首先在项目根目录下创建Dockerfile，注意这个Dockerfile可以按照自己的需求更改。
 
+```dockerfile
 FROM java:8
-ADD target/\*.jar appName.jar
+ADD target/*.jar appName.jar
 VOLUME /tmp
 EXPOSE 9010
-ENTRYPOINT \["java", "-jar", "appName.jar"\]
+ENTRYPOINT ["java", "-jar", "appName.jar"]
+```
 
 在Jenkins创建新的任务
 
@@ -188,13 +195,14 @@ ENTRYPOINT \["java", "-jar", "appName.jar"\]
 
 ![](img/image-8-1024x653.png)
 
-cd /var/jenkins\_home/workspace/test/
+```shell
+cd /var/jenkins_home/workspace/test/
 
-img\_output=test
+img_output=test
 
 # 先删除之前的容器
 echo "remove old container"
-# docker ps -a  grep $img\_output  awk '{print $1}'
+# docker ps -a  grep $img_output  awk '{print $1}'
 
 if docker ps -agrep -i volleyball;then 
 docker rm -f volleyball
@@ -205,18 +213,19 @@ echo "remove old image"
 docker rmi -f volleyball
 
 # 构建镜像
-docker build -t $img\_output .
+docker build -t $img_output .
 
 # 打印当前镜像
 echo "current docker images"
-docker images  grep $img\_output
+docker images  grep $img_output
 # 启动容器
 echo "start container"
-docker run --name $img\_output -p 9010:9010 -d $img\_output
+docker run --name $img_output -p 9010:9010 -d $img_output
 # 打印当前容器
 echo "current container"
-docker ps -a  grep $img\_output
+docker ps -a  grep $img_output
 echo "start service success!"
+```
 
 然后回到Github，我们把钩子设置一下。
 

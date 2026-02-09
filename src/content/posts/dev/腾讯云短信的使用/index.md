@@ -4,6 +4,7 @@ published: 2020-10-22 16:12:13
 tags: []
 id: '390'
 image: ./img/timg.jpg
+category: 开发
 ---
 
 首先你需要开通[腾讯云短信服务](https://console.cloud.tencent.com/smsv2)。开通后，默认会每个月送100条短信。 开通后，点击[快速入门](https://console.cloud.tencent.com/smsv2/guide)，按照教程里进行操作。好的，教程到此结束，谢谢大家的观看（逃
@@ -14,7 +15,7 @@ image: ./img/timg.jpg
 
 点击侧边栏**xx短信->签名管理** ![](img/4AEIVSUE9AOWX05T0QP.png) 然后点击**创建签名** ![](img/NSF2PHNDLLRDABIX8D.png) 然后填写认证信息。可选择类型有网站、APP、公众号、小程序，然后对类型进行认证。审核在2小时内处理完毕。 ![](img/9I5NLJ@QNVFMW1F5GM07.png)
 
-## 2\. 创建模板
+## 2. 创建模板
 
 点击侧边栏**xx短信->正文模板管理** ![](img/T55PPMGS8VVVU0XR.png) 点击**创建正文模板** ![](img/A829EFLU3JY1WFLGY7.png) 然后按照要求进行填写即可。这里审核较签名宽松，只要不违法，基本都是通过。审核在2小时内处理完毕。 ![](img/Q@2SCXNELJ_ZU13P8S6.png)
 
@@ -26,7 +27,7 @@ image: ./img/timg.jpg
 
 [腾讯云短信文档](https://cloud.tencent.com/document/product/382) 首先在**应用管理->应用列表**找到你创建短信签名、模板的应用，记下SDKAppID。 在[API密钥管理](https://console.cloud.tencent.com/cam/capi)创建、获取你的SecretId与SecretKey。 创建项目，并添加Maven依赖
 
-```markup
+```xml
 <dependency>
      <groupId>com.tencentcloudapi</groupId>
      <artifactId>tencentcloud-sdk-java</artifactId>
@@ -36,7 +37,7 @@ image: ./img/timg.jpg
 
 参照腾讯云文档，添加如下代码发送短信
 
-```Java
+```java
 import com.tencentcloudapi.common.Credential;
 import com.tencentcloudapi.common.exception.TencentCloudSDKException;
 import com.tencentcloudapi.common.profile.ClientProfile;

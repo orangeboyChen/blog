@@ -1,7 +1,7 @@
 ---
 title: 2025总结
 published: 2025-12-31 21:47:46
-tags: []
+tags: [年度总结]
 id: '944'
 category: 生活
 image: ./img/u22523009562214851030fm253fmtautoapp138.webp
@@ -51,8 +51,7 @@ image: ./img/u22523009562214851030fm253fmtautoapp138.webp
 ![](img/3C5E8222-1ECF-45E5-A6CE-6F950F78FA7F_1_105_c.jpeg)
 
 ### 2025.1.3 给XiaomiHome提的PR被Reject
-
-[https://github.com/XiaoMi/ha\_xiaomi\_home/pull/524](https://github.com/XiaoMi/ha_xiaomi_home/pull/524)
+::github-pr{repo="XiaoMi/ha_xiaomi_home" number="524"}
 
 ### 2025.1.6 后台崩了
 

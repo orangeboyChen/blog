@@ -1,7 +1,7 @@
 ---
 title: Go初探 (5) – 结构体与接口
 published: 2020-11-13 14:43:55
-tags: []
+tags: [Go]
 id: '458'
 category: 开发
 ---

@@ -4,13 +4,12 @@ published: 2023-09-27 15:29:57
 tags: []
 id: '508'
 image: ./img/企业微信20230927-152922@2x-2.png
+category: 开发
 ---
 
 # **设备/系统介绍**
 
 ![](img/image001-1024x575.jpg)
-
-<!-- more -->
 
 ### **硬件**
 
@@ -76,7 +75,7 @@ iOS APP里的View是2D的。为了让View做到3D显示，苹果在View上加了
 ![](img/image013-1-1024x341.png)
 
 *   Window：主要用于展示平面元素、2D窗体
-*   Volumn：用于展示三维物体
+*   Volume：用于展示三维物体
 *   Immersive Space：沉浸空间，啥都可以展示
 
 ## **Window**
@@ -214,7 +213,7 @@ Entity的初始化在make闭包中完成，每一帧的更新会回掉update闭�
 
 ![](img/image050.jpg)
 
-```
+```swift
 let entity = try? await Entity(named: "test")
 let entity2 = try? await Entity(named: "test2", in: realityKitContentBundle)
 ```
@@ -227,7 +226,7 @@ let entity2 = try? await Entity(named: "test2", in: realityKitContentBundle)
 
 下面Demo为了直观，直接用强制非空取代空判断；实际开发中必须要做判空。
 
-```
+```swift
 let entity = try! await Entity(named: "test")
 let def = entity.availableAnimations[0].definition  // 定义动画类型
 let ani = try! AnimationResource.generate(with: AnimationView(source: def))  // 创建动画元素
@@ -242,7 +241,7 @@ entity.playAnimation(ani.repeat(count: 100))  // Entity播放动画
 *   Sampled => CAKeyframeAnimation
 *   Orbit => 环绕动画
 
-```
+```swift
 let entity = try! await Entity(named: "test")
 let def = OrbitAnimation(...)    // 改了这行，定义动画类型
 let ani = try! AnimationResource.generate(with: AnimationView(source: def))  // 创建动画元素
@@ -258,7 +257,7 @@ entity.playAnimation(ani.repeat(count: 100)) // Entity播放动画
 与2D的SwiftUI相比，这里多了个targetedAnyEntity方法，意思是System内的所有Entity都能被这个gesture响应。
 
 *   targetedAnyEntity - System内任意Entity都响应该手势
-*   targetedToEntity(\_ entity: Entity) - 指定Entity响应该手势
+*   targetedToEntity(_ entity: Entity) - 指定Entity响应该手势
 *   targetedToEntity(where query: QueryPredicate<Entity>) - 指定某些Entity进行
 
 # **移植**

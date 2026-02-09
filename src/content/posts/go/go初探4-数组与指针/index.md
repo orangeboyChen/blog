@@ -1,7 +1,7 @@
 ---
 title: Go初探 (4) – 数组与指针
 published: 2020-11-06 14:32:56
-tags: []
+tags: [Go]
 id: '453'
 category: 开发
 ---

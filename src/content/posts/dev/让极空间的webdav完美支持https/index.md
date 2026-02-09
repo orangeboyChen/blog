@@ -1,9 +1,10 @@
 ---
 title: 让NAS的WebDAV完美支持HTTPS
 published: 2023-12-31 20:38:01
-tags: [开发]
+tags: [NAS]
 id: '628'
 image: ./img/WX20231231-203530@2x-1.png
+category: 开发
 ---
 
 正好年底了，有点闲钱整个NAS玩玩。我之前有折腾过轻度服务器，所以选NAS的时候特别注重稳定性，选择了极空间的Z2Pro。但是到手后发现它的操作对新手非常友好，对老手不友好。比如有些事情明明可以打几行命令解决，它非要你在GUI上完成。包括这次配HTTPS也是，特此写篇文章记录下。
@@ -39,7 +40,7 @@ sequenceDiagram
 
 你想操作NAS，向NAS发起一个请求，浏览器要求你输入用户名和密码。在你输入密码后，浏览器会构造一个字符串：
 
-`basic base64(${用户名}:${密码})`
+`basic base64(${\text{用户名}}:${密码})`
 
 这个字符串会带在HTTP请求Header的Authorization里。NAS在收到请求后，会对Header的Authorization进行解析。如果用户名密码正确，则进行下一步操作，否则返回403错误码。
 
@@ -203,7 +204,7 @@ docker run traefik -v ... -p ... -e ... -d
 *   证书信息（在这里填入你的证书请求信息，包括邮箱，域名服务商）
 *   打开文件provider（默认的provider是docker，这里我关了，即监听容器内目录/etc/traefik/config下所有配置文件的变化）
 
-2\. 在挂载目录/Docker/traefik/config中，新建webdav.yml（随意起名），里面填入：
+2. 在挂载目录/Docker/traefik/config中，新建webdav.yml（随意起名），里面填入：
 
 ```yaml
 http:
@@ -222,9 +223,9 @@ http:
           - url: "http://NAS局域网ip:5005"
 ```
 
-3\. 创建一个空的acme.json，移动到/Docker/traefik/里
+3. 创建一个空的acme.json，移动到/Docker/traefik/里
 
-4\. 启动Traefik容器
+4. 启动Traefik容器
 
 到这里就配置成功了。你以为结束了吗？别急，下面有个小坑
 

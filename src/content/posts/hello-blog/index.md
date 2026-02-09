@@ -3,7 +3,7 @@ title: Hello blog.
 published: 2020-06-24 02:20:56
 tags: []
 id: '51'
-category: 未分类
+category: 生活
 ---
 
 从去年就开始有写博客的想法了，但因为时间原因一拖再拖到现在才实现。

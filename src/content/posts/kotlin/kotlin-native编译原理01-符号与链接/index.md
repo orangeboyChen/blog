@@ -1,7 +1,7 @@
 ---
 title: Kotlin Native编译原理01 - 符号与链接
 published: 2025-05-12 18:57:50
-tags: []
+tags: [Kotlin, iOS]
 id: '910'
 category: 开发
 image: ./img/1_iDQ77Lohz3F3tx2Fml1msg.png
@@ -17,7 +17,7 @@ image: ./img/1_iDQ77Lohz3F3tx2Fml1msg.png
 
 首先，我们有一份C语言的源代码，very simple：
 
-```C
+```c
 // test.c
 
 #include <stdio.h>
@@ -185,7 +185,7 @@ Disassembly of section __TEXT,__text:
 ...
 ```
 
-`0x100004000` 里取出的值是`0x00000000 00000080`。那么继续看上面的\_\_stub，x16=0，那么接着会执行br 0，必然会发生segmentation fault。不过我们的程序是正常运行的，这是怎么做到的呢？
+`0x100004000` 里取出的值是`0x00000000 00000080`。那么继续看上面的__stub，x16=0，那么接着会执行br 0，必然会发生segmentation fault。不过我们的程序是正常运行的，这是怎么做到的呢？
 
 恭喜你，发现了`动态链接`
 
@@ -215,9 +215,9 @@ Disassembly of section __TEXT,__text:
 
 > **符号（symbol）就是程序中有名字的东西**，比如：
 
-哈哈，G老师对符号的解释真的是言简意赅呢。符号即是字符串对虚拟地址/地址偏移的映射，符号表则是多个符号的集合，会集中存在程序文件里。比如我们在反汇编里看到的\_printSomething，实际是符号的一种。
+哈哈，G老师对符号的解释真的是言简意赅呢。符号即是字符串对虚拟地址/地址偏移的映射，符号表则是多个符号的集合，会集中存在程序文件里。比如我们在反汇编里看到的_printSomething，实际是符号的一种。
 
-不同文件类型对符号的存法不同。对于MACH-O，符号表存在LoadCommand区里，对应Command为LC\_SYMTAB。我们使用otool可轻松看到文件里符号表的位置：
+不同文件类型对符号的存法不同。对于MACH-O，符号表存在LoadCommand区里，对应Command为LC_SYMTAB。我们使用otool可轻松看到文件里符号表的位置：
 
 ```shell
 otool -l test  grep -A 5 LC_SYMTAB           
@@ -231,13 +231,13 @@ otool -l test  grep -A 5 LC_SYMTAB
 
 MACH-O里，符号表又分为符号信息表和字符串表两部分（Linux里的ELF也是一样的）。符号信息的结构如下：
 
-[https://github.com/apple-oss-distributions/xnu/blob/main/EXTERNAL\_HEADERS/mach-o/nlist.h](https://github.com/apple-oss-distributions/xnu/blob/main/EXTERNAL_HEADERS/mach-o/nlist.h)
+[https://github.com/apple-oss-distributions/xnu/blob/main/EXTERNAL_HEADERS/mach-o/nlist.h](https://github.com/apple-oss-distributions/xnu/blob/main/EXTERNAL_HEADERS/mach-o/nlist.h)
 
-[https://developer.apple.com/documentation/kernel/nlist\_64](https://developer.apple.com/documentation/kernel/nlist_64)
+[https://developer.apple.com/documentation/kernel/nlist_64](https://developer.apple.com/documentation/kernel/nlist_64)
 
-[https://github.com/qyang-nj/llios/blob/main/macho\_parser/docs/LC\_SYMTAB.md](https://github.com/qyang-nj/llios/blob/main/macho_parser/docs/LC_SYMTAB.md)
+[https://github.com/qyang-nj/llios/blob/main/macho_parser/docs/LC_SYMTAB.md](https://github.com/qyang-nj/llios/blob/main/macho_parser/docs/LC_SYMTAB.md)
 
-```C
+```c
 struct nlist_64 {
     union {
         uint32_t  n_strx; /* index into the string table */
@@ -271,9 +271,9 @@ hexdump -C -s 32944 -n 200 test
 00008178
 ```
 
-一顿解析可知，\_printSomething符号的地址为`0x000080d0` ，符号名索引为`1c`。查字符串表，`1c` 位置的字符串正好是`_printSomething`
+一顿解析可知，_printSomething符号的地址为`0x000080d0` ，符号名索引为`1c`。查字符串表，`1c` 位置的字符串正好是`_printSomething`
 
-但是，\_print符号的位置位于哪里呢。我们先来看LC\_DYSYMTAB的结构，该结构在动态链接时会用到。
+但是，_print符号的位置位于哪里呢。我们先来看LC_DYSYMTAB的结构，该结构在动态链接时会用到。
 
 ```shell
 otool -l test grep -A 20 LC_DYSYMTAB
@@ -402,11 +402,11 @@ Target 0: (test) stopped.
 
 可看到，在程序执行前，`0x100004000` 就被填充为`0x19e4e7bec` 。我们在执行printf函数前，GOT里就已经有printf的真实地址了。说明printf是非延迟绑定的。
 
- 至于为什么clang没有启用延迟绑定，我也不知道，按道理来说默认是开启的。
+至于为什么clang没有启用延迟绑定，我也不知道，按道理来说默认是开启的。
 
 那么非延迟绑定的过程是怎么样的呢？
 
-*   1\. 读取\_\_got段的LoadCommand
+*   1. 读取__got段的LoadCommand
 
 ```shell
 otool -l test  grep -A 10 __got         
@@ -423,15 +423,15 @@ otool -l test  grep -A 10 __got
  reserved2 0
 ```
 
-*    2. 计算符号名
+*   2. 计算符号名
 
-symbol = symbol\_table\[indirect\_symbol\_table\[ reserved1 + index \]\]
+symbol = symbol_table[indirect_symbol_table[ reserved1 + index ]]
 
 以`0x100004000` 为例：
 
-symbol = symbol\_table\[indirect\_symbol\_table\[1 + 0\]\] = symbol\_table\[3\]，对应符号表第3项，该项的符号名正好是`_printf`
+symbol = symbol_table[indirect_symbol_table[1 + 0]] = symbol_table[3]，对应符号表第3项，该项的符号名正好是`_printf`
 
-*   3\. 通过一系列魔法（链接器复杂实现），得到非直接符号的真实地址，填充回\_\_got里
+*   3. 通过一系列魔法（链接器复杂实现），得到非直接符号的真实地址，填充回__got里
 
 再来看下延迟绑定。我无法开启clang的延迟绑定，因此转移到X64 Linux上进行操作：
 
@@ -549,7 +549,7 @@ _dl_runtime_resolve_xsavec in section .text of /lib64/ld-linux-x86-64.so.2
 
 我们改写下程序：
 
-```C
+```c
 #include <stdio.h>
 
 void printSomething() {
@@ -563,7 +563,7 @@ int main() {
 }
 ```
 
-这个程序编译会报错，提示error: redefinition of 'printSomething’。这是因为两个printSomething函数在C里的符号都是\_printSomething，但每个符号只能指向一个程序地址，因此编译不通过。
+这个程序编译会报错，提示error: redefinition of 'printSomething’。这是因为两个printSomething函数在C里的符号都是_printSomething，但每个符号只能指向一个程序地址，因此编译不通过。
 
 那如果用clang++编译呢？
 

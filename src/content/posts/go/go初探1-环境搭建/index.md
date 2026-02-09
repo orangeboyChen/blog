@@ -1,7 +1,7 @@
 ---
 title: Go初探 (1) - 环境搭建
 published: 2020-10-23 14:55:40
-tags: []
+tags: [Go]
 id: '414'
 category: 开发
 ---
