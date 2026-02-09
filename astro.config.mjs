@@ -28,6 +28,7 @@ import { remarkReadingTime } from "./src/plugins/remark-reading-time.mjs";
 import { pluginCustomCopyButton } from "./src/plugins/expressive-code/custom-copy-button.js";
 import rehypeMermaid from 'rehype-mermaid';
 import { rehypeUrlCard } from "./src/plugins/rehype-url-card.mjs";
+import { EmailCardComponent } from "./src/plugins/rehype-component-email-card.mjs";
 
 // https://astro.build/config
 export default defineConfig({
@@ -128,6 +129,7 @@ export default defineConfig({
 					components: {
 						github: GithubCardComponent,
 						"github-pr": GithubPrCardComponent,
+						email: EmailCardComponent,
 						note: (x, y) => AdmonitionComponent(x, y, "note"),
 						tip: (x, y) => AdmonitionComponent(x, y, "tip"),
 						important: (x, y) => AdmonitionComponent(x, y, "important"),

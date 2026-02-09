@@ -103,15 +103,18 @@ printf("Hello world!");
 
 是clang。
 
-怎么确定是clang做的？只要把代码编译成汇编，就能看到这些外部符号已经被加进来了。源码参考：[https://github.com/llvm/llvm-project/blob/main/clang/lib/CodeGen/CGObjCMac.cpp](https://github.com/llvm/llvm-project/blob/main/clang/lib/CodeGen/CGObjCMac.cpp)
+怎么确定是clang做的？只要把代码编译成汇编，就能看到这些外部符号已经被加进来了。源码参考：
+
+::url-card{url="https://github.com/llvm/llvm-project/blob/main/clang/lib/CodeGen/CGObjCMac.cpp"}
 
 为什么Objective-C需要完全支持纯C语法呢？因为这是Objective-C的定义：
 
 > Objective-C is the primary programming language you use when writing software for OS X and iOS. **It’s a superset of the C programming language and provides object-oriented capabilities and a dynamic runtime.** Objective-C inherits the syntax, primitive types, and flow control statements of C and adds syntax for defining classes and methods. It also adds language-level support for object graph management and object literals while providing dynamic typing and binding, deferring many responsibilities until runtime.
+> ::url-card{url="https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/ProgrammingWithObjectiveC/Introduction/Introduction.html"}
 
-[ProgrammingWithObjectiveC](https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/ProgrammingWithObjectiveC/Introduction/Introduction.html)
+objc4代码
 
-objc4代码：[https://github.com/apple-oss-distributions/objc4](https://github.com/apple-oss-distributions/objc4)
+::github{repo="apple-oss-distributions/objc4"}
 
 Objective-C是C的**超集**。换句话说，Objective-C编译器必须有C编译器所有特性，这样才能够完整编译C程序。
 
@@ -149,7 +152,7 @@ int main() {
 > 
 > The root class of **most** Objective-C class hierarchies, from which subclasses inherit a basic interface to the runtime system and the ability to behave as Objective-C objects.
 > 
-> [nsobject-swift.class](https://developer.apple.com/documentation/objectivec/nsobject-swift.class)
+> ::url-card{url="https://developer.apple.com/documentation/objectivec/nsobject-swift.class"}
 
 当然，上面的程序确实在运行时会报错，并且是在`[MyClass alloc]` 报的错。
 
@@ -326,7 +329,7 @@ L_OBJC_IMAGE_INFO:
 
 恭喜你，发现了**Improve app size and runtime performance**
 
-[Improve app size and runtime performance](https://developer.apple.com/videos/play/wwdc2022/110363)
+::url-card{url="https://developer.apple.com/videos/play/wwdc2022/110363"}
 
 这个优化具体做了什么？还是以`[objc sayHello]` 为例。在先前的clang版本，这个语句会被直接编译成：
 
@@ -355,7 +358,9 @@ bl _objc_msgSend
 
 所以代价是什么？代价是作为coder，我们不能使用类似`_objc_msgSend$xxxx` 这样的符号了。
 
-链接器新增objc_stubs具体代码：[https://github.com/apple-oss-distributions/ld64/blob/main/src/ld/passes/objc_stubs.cpp](https://github.com/apple-oss-distributions/ld64/blob/main/src/ld/passes/objc_stubs.cpp)
+链接器新增objc_stubs具体代码：
+
+::url-card{url="https://github.com/apple-oss-distributions/ld64/blob/main/src/ld/passes/objc_stubs.cpp"}
 
 那么，`_objc_msgSend$sayHello`实际是什么呢？我们接着往下看：
 
@@ -533,9 +538,11 @@ Contents of section __TEXT,__objc_methlist:
 
 苹果**又偷偷加魔法**了？还真是。恭喜你，发现了**相对方法表（relative method list）**
 
-[Advancements in the Objective-C runtime](https://developer.apple.com/videos/play/wwdc2020/10163/?time=1054)
+::url-card{url="https://developer.apple.com/videos/play/wwdc2020/10163/?time=1054"}
 
-代码：[https://github.com/apple-oss-distributions/ld64/blob/main/src/ld/passes/objc.cpp](https://github.com/apple-oss-distributions/ld64/blob/main/src/ld/passes/objc.cpp)
+代码：
+
+::url-card{url="https://github.com/apple-oss-distributions/ld64/blob/main/src/ld/passes/objc.cpp"}
 
 相对方法表其实很容易理解。原先方法表里的每一项结构为：
 
@@ -609,7 +616,7 @@ graph LR
 
 果然，ARM也是这么实现的：
 
-[Describing-memory-in-AArch64](https://developer.arm.com/documentation/102376/0200/Describing-memory-in-AArch64)
+::url-card{url="https://developer.arm.com/documentation/102376/0200/Describing-memory-in-AArch64"}
 
 具体来说，由**AP**这个比特来控制页面的读写权限。这也解释了，某块内存上的读写权限是由CPU去保证的。某块只读内存，除非切到内核态（比如内核存在提权漏洞），或者环境辐射比较大导致内存颗粒发生了结构性变化，不然不可能往里面写入数据。
 
@@ -653,7 +660,7 @@ attributes (none)
 
 原来got节也在`DATA_CONST`段里，这也就解释了为什么在程序装载时`__DATA_CONST`段的内存需可读可写，因为在链接阶段dyld会修改这片内存。这片内存什么时候变成只读的呢？就在dyld源码里，调用`mprotect` 会更改该段的内存权限。
 
-[dyldMain.cpp#L1241](https://github.com/apple-oss-distributions/dyld/blob/main/dyld/dyldMain.cpp#L1241)
+::url-card{url="https://github.com/apple-oss-distributions/dyld/blob/main/dyld/dyldMain.cpp#L1241"}
 
 ```objective-c
 // make __DATA_CONST read-only (kernel maps it r/w)
@@ -684,7 +691,7 @@ attributes (none)
 
 接着，我们打开xnu内核源码，查找内核号`74` 对应实现，发现刚好就是XNU内核BSD内核里的`mprotect`
 
-[syscalls.master#L132](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/kern/syscalls.master#L132)
+::url-card{url="https://github.com/apple-oss-distributions/xnu/blob/main/bsd/kern/syscalls.master#L132"}
 
 ```c
 74AUE_MPROTECTALL{ int mprotect(caddr_ut addr, size_ut len, int prot) NO_SYSCALL_STUB; }
@@ -692,7 +699,7 @@ attributes (none)
 
 BSD层的`mprotect` 主要做一些参数校验，接着跳到OSMFK内核的`mach_vm_protect`
 
-[kern_mman.c#L1187](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/kern/kern_mman.c#L1187)
+::url-card{url="https://github.com/apple-oss-distributions/xnu/blob/main/bsd/kern/kern_mman.c#L1187"}
 
 ```c
 // kern_mman.c
@@ -740,7 +747,7 @@ return EINVAL;
 
 > `mac_proc_check_mprotect` 用来检查mmap的权限。iOS上程序无法通过mmap获取可执行内存，就是在这里判断的
 
-[vm_user.c#L292](https://github.com/apple-oss-distributions/xnu/blob/main/osfmk/vm/vm_user.c#L292)
+::url-card{url="https://github.com/apple-oss-distributions/xnu/blob/main/osfmk/vm/vm_user.c#L292"}
 
 ```c
 // vm_user.c
@@ -771,7 +778,7 @@ return vm_map_protect(map,
 
 `vm_map_protect` 做了什么呢？首先找到指定的`vm_map_entry`（描述某块内存的作用），并检验入参合法性，如有需要合并/分裂`vm_map_entry`，然后调用`pmap_protect` 刷新页表权限
 
-[vm_map.c#L5641](https://github.com/apple-oss-distributions/xnu/blob/main/osfmk/vm/vm_map.c#L5641)
+::url-card{url="https://github.com/apple-oss-distributions/xnu/blob/main/osfmk/vm/vm_map.c#L5641"}
 
 ```c
 /*
@@ -809,7 +816,7 @@ pmap_protect_options(map->pmap,
 
 `pmap_protect` 和 `pmap_protect_options` 最终会跳到 `pmap_protect_options_internal` 上，这就是操作PTE的关键函数。`pmap_protect_options_internal` 先判断要改写的权限值，并最终调用`write_pte_fast` 改写PTE
 
-[pmap.c#L5413](https://github.com/apple-oss-distributions/xnu/blob/main/osfmk/arm/pmap/pmap.c#L5413)
+::url-card{url="https://github.com/apple-oss-distributions/xnu/blob/main/osfmk/arm/pmap/pmap.c#L5413"}
 
 ```c
 MARK_AS_PMAP_TEXT vm_map_address_t
@@ -894,7 +901,7 @@ write_pte_fast(pte_p, tmplate);
 > 
 > Invoked whenever a class or category is added to the Objective-C runtime; implement this method to perform class-specific behavior upon loading.
 > 
-> [nsobject-swift.class-load()](https://developer.apple.com/documentation/objectivec/nsobject-swift.class/load())
+> ::url-card{url="https://developer.apple.com/documentation/objectivec/nsobject-swift.class/load("}
 
 **简单分析**
 
@@ -1123,13 +1130,17 @@ Objective-C初始化结束后，dyld终于把程序的控制权转移到了main�
 
 > PA是ARMv8.3-A引入的指针高位加密签名机制，用于防止指针篡改。苹果自A12芯片（iPhone XS系列，iOS 12）开始支持，用于保护返回地址、isa指针等关键指针安全。
 
-[https://github.com/lelegard/arm-cpusysregs/blob/main/docs/arm64e-on-macos.md](https://github.com/lelegard/arm-cpusysregs/blob/main/docs/arm64e-on-macos.md)
+::url-card{url="https://github.com/lelegard/arm-cpusysregs/blob/main/docs/arm64e-on-macos.md"}
 
 PA是arm64e提供的功能。简单来说，指针认证是指CPU有一个硬件，能够对传入的指针进行签名和验签，签名后的信息被存储在指针的高位中（指针标记）。指针签名的私钥由CPU保管，甚至内核都拿不到，确保了PA「一定」安全性。
 
-paciza: [https://developer.arm.com/documentation/dui0801/g/A64-General-Instructions/PACIA--PACIZA--PACIA1716--PACIASP--PACIAZ](https://developer.arm.com/documentation/dui0801/g/A64-General-Instructions/PACIA--PACIZA--PACIA1716--PACIASP--PACIAZ)
+paciza: 
 
-autiza: [https://developer.arm.com/documentation/dui0801/g/A64-General-Instructions/AUTIA--AUTIZA--AUTIA1716--AUTIASP--AUTIAZ](https://developer.arm.com/documentation/dui0801/g/A64-General-Instructions/AUTIA--AUTIZA--AUTIA1716--AUTIASP--AUTIAZ)
+::url-card{url="https://developer.arm.com/documentation/dui0801/g/A64-General-Instructions/PACIA--PACIZA--PACIA1716--PACIASP--PACIAZ"}
+
+autiza: 
+
+::url-card{url="https://developer.arm.com/documentation/dui0801/g/A64-General-Instructions/AUTIA--AUTIZA--AUTIA1716--AUTIASP--AUTIAZ"}
 
 来看段very simple的代码：
 
@@ -1211,16 +1222,27 @@ hacker sayHello
 
 而iOS的越狱很多都是基于UAF实现的：
 
-*   CVE-2016-4655 (IOHIDFamily UAF)[https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2016-4655](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2016-4655)
-*   CVE-2017-13861（IOKit UAF）[https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2017-13861](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2017-13861)
-*   CVE-2019-8605（sock_puppet）[https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-8605](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-8605)
+*   CVE-2016-4655 (IOHIDFamily UAF)
+
+::url-card{url="https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2016-4655"}
+
+*   CVE-2017-13861（IOKit UAF）
+
+::url-card{url="https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2017-13861"}
+
+*   CVE-2019-8605（sock_puppet）
+
+::url-card{url="https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-8605"}
+
 *   等等
 
-开启PA后，UAF的难度直线上升，所以在Objective-C运行时里，Apple把PA技术用到了**能用到的几乎所有地方（包括ISA指针、method_list等）**。不过，PA并不是绝对安全的，本身也会遭受侧信道攻击，详见这篇MIT的论文：[https://dl.acm.org/doi/pdf/10.1145/3470496.3527429。](https://dl.acm.org/doi/pdf/10.1145/3470496.3527429%E3%80%82)
+开启PA后，UAF的难度直线上升，所以在Objective-C运行时里，Apple把PA技术用到了**能用到的几乎所有地方（包括ISA指针、method_list等）**。不过，PA并不是绝对安全的，本身也会遭受侧信道攻击，详见这篇MIT的论文：
+
+::url-card{url="https://dl.acm.org/doi/pdf/10.1145/3470496.3527429"}
 
 并且PA还有一堆的缺陷待解决，每次解决导致了PA的ABI不稳定，因此尽管苹果发了
 
-[Preparing your app to work with pointer authentication](https://developer.apple.com/documentation/security/preparing-your-app-to-work-with-pointer-authentication)
+::url-card{url="https://developer.apple.com/documentation/security/preparing-your-app-to-work-with-pointer-authentication"}
 
 这篇文章推荐开发者们积极适配PA，自身系统的应用/库都完成了arm64e的适配，但截止至今日，第三方arm64e应用仍无法在macOS上运行。iOS第三方应用虽然可选arm64e架构，但Xcode默认构建arm64。并且Xcode16还存在一个bug，你构建的arm64e应用无法复制到iOS设备上并运行。
 

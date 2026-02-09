@@ -77,7 +77,7 @@ sequenceDiagram
 1.  数据库被拖库后，可用彩虹表推测部分用户密码
 2.  因为哈希值唯一，如果知道用户在其他系统的明文密码，就可以知道用户在该系统中有没有使用相同的密码
 
-[彩虹表Wiki](https://zh.wikipedia.org/wiki/%E5%BD%A9%E8%99%B9%E8%A1%A8)
+::url-card{url="https://zh.wikipedia.org/wiki/%E5%BD%A9%E8%99%B9%E8%A1%A8"}
 
 ### 流行：加盐存密码
 
@@ -247,7 +247,7 @@ $\text{验证签名，}rsa_decode(D, signature) == hash(M)$
 
 ### RSA详解
 
-[Wiki: RSA](https://zh.wikipedia.org/wiki/RSA%E5%8A%A0%E5%AF%86%E6%BC%94%E7%AE%97%E6%B3%95)
+::url-card{url="https://zh.wikipedia.org/wiki/RSA%E5%8A%A0%E5%AF%86%E6%BC%94%E7%AE%97%E6%B3%95"}
 
 ![](img/image-20241219232344955-1024x479.png)
 
@@ -255,13 +255,13 @@ $\text{验证签名，}rsa_decode(D, signature) == hash(M)$
 
 ##### 同余
 
-[Wiki: 同余](https://zh.wikipedia.org/wiki/%E5%90%8C%E9%A4%98)
+::url-card{url="https://zh.wikipedia.org/wiki/%E5%90%8C%E9%A4%98"}
 
 ![](img/image-20241220140449220-1024x699.png)
 
 ##### 欧拉定理与欧拉函数
 
-[欧拉定理&费马小定理](https://oi-wiki.org/math/number-theory/fermat/)
+::url-card{url="https://oi-wiki.org/math/number-theory/fermat/"}
 
 ![](img/image-20241219203348186-1024x443.png)
 
@@ -430,7 +430,7 @@ $\text{证毕}$
 1.  随机生成一个大数 $x$
 2.  判断 $x$ 是否为质数，一般选用 $Miller-Rabin\text{素性测试}$ 算法判断
 
-[素数](https://oi-wiki.org/math/number-theory/prime/#millerrabin-%E7%B4%A0%E6%80%A7%E6%B5%8B%E8%AF%95)
+::url-card{url="https://oi-wiki.org/math/number-theory/prime/#millerrabin-%E7%B4%A0%E6%80%A7%E6%B5%8B%E8%AF%95"}
 
 ### Passkey怎么验证用户身份
 
@@ -440,7 +440,9 @@ $\text{证毕}$
 
 ## Passkey实践
 
-检测你的设备是否支持Passkey：[WebAuthN](https://webauthn.io/)
+检测你的设备是否支持Passkey：
+
+::url-card{url="https://webauthn.io/"}
 
 ### 流程：简单版
 
@@ -480,7 +482,9 @@ sequenceDiagram
 
 ### WebAuthN
 
-WebAuthN是W3C标准。客户端很多Passkey的实现也是基于WebAuthN。[MDN Docs](https://developer.mozilla.org/zh-CN/docs/Web/API/Web_Authentication_API)
+WebAuthN是W3C标准。客户端很多Passkey的实现也是基于WebAuthN。
+
+::url-card{url="https://developer.mozilla.org/zh-CN/docs/Web/API/Web_Authentication_API"}
 
 ### 数据结构与流程分析
 
@@ -526,7 +530,7 @@ WebAuthN是W3C标准。客户端很多Passkey的实现也是基于WebAuthN。[MD
 
 ```
 
-[W3C: PublicKeyCredentialCreationOptions](https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredentialCreationOptions)
+::url-card{url="https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredentialCreationOptions"}
 
 *   rp.name，rp.id：域信息
 *   user.id：用户特征
@@ -553,7 +557,7 @@ WebAuthN是W3C标准。客户端很多Passkey的实现也是基于WebAuthN。[MD
 }
 ```
 
-[W3C: AuthenticatorAttestationResponse](https://developer.mozilla.org/en-US/docs/Web/API/AuthenticatorAttestationResponse)
+::url-card{url="https://developer.mozilla.org/en-US/docs/Web/API/AuthenticatorAttestationResponse"}
 
 *   id：凭据id
 *   clientDataJSON：base64编码的json数据，json为：
@@ -567,9 +571,11 @@ WebAuthN是W3C标准。客户端很多Passkey的实现也是基于WebAuthN。[MD
 ```
 
 *   attestationObject：CBOR格式结构体，包含：
-    *   authData：凭据信息，CBOR格式的Authenticator data，包含公钥、域信息等[W3C: Authenticator data](https://developer.mozilla.org/en-US/docs/Web/API/Web_Authentication_API/Authenticator_data)
+    *   authData：凭据信息，CBOR格式的Authenticator data，包含公钥、域信息等
     *   fmt
     *   attStmt
+
+::url-card{url="https://developer.mozilla.org/en-US/docs/Web/API/Web_Authentication_API/Authenticator_data"}
 
 后台 -> 客户端：随意
 
@@ -590,7 +596,7 @@ WebAuthN是W3C标准。客户端很多Passkey的实现也是基于WebAuthN。[MD
 }
 ```
 
-[W3C: PublicKeyCredentialRequestOptions](https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredentialRequestOptions)
+::url-card{url="https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredentialRequestOptions"}
 
 *   challenge：后台发的挑战
 *   allowCredentials：允许使用的凭证id，为空表示由用户自己选择。（如果客户端->后台有发送用户特征，那么这里的allowCredentials应为用户注册过的Passkey凭证id）
@@ -617,7 +623,7 @@ WebAuthN是W3C标准。客户端很多Passkey的实现也是基于WebAuthN。[MD
 }
 ```
 
-[W3C: AuthenticatorAssertionResponse](https://developer.mozilla.org/en-US/docs/Web/API/AuthenticatorAssertionResponse)
+::url-card{url="https://developer.mozilla.org/en-US/docs/Web/API/AuthenticatorAssertionResponse"}
 
 *   id：凭据id
 *   response.clientDataJSON，response.authenticatorData和注册Passkey时类似
@@ -629,7 +635,7 @@ WebAuthN是W3C标准。客户端很多Passkey的实现也是基于WebAuthN。[MD
 
 ### iOS实现
 
-[Apple Doc: supporting-passkeys](https://developer.apple.com/documentation/authenticationservices/supporting-passkeys)
+::url-card{url="https://developer.apple.com/documentation/authenticationservices/supporting-passkeys"}
 
 前置条件：
 
@@ -647,10 +653,15 @@ WebAuthN是W3C标准。客户端很多Passkey的实现也是基于WebAuthN。[MD
 
 怎么获取团队id？
 
-1.  打开`https://developer.apple.com/account`
+1.  打开
+
+::url-card{url="https://developer.apple.com/account"}
+
 2.  ![](img/image-20241220144703062.png)
 
-放上去后：[https://m.v.qq.com/.well-known/apple-app-site-association](https://m.v.qq.com/.well-known/apple-app-site-association)
+放上去后：
+
+::url-card{url="https://m.v.qq.com/.well-known/apple-app-site-association"}
 
 iPhone启动或安装APP时会去拉一遍数据
 
@@ -672,7 +683,7 @@ ASAuthorizationPlatformPublicKeyCredentialAssertion
 
 ### Android实现
 
-[Credential Manager](https://developer.android.com/identity/sign-in/credential-manager)
+::url-card{url="https://developer.android.com/identity/sign-in/credential-manager"}
 
 Android与Passkey的操作都需用到Credential Manager
 
@@ -710,7 +721,7 @@ Android14及以后，用户可以安装并使用其它密码管理器了。用�
 
 OPPO自己搞了个SDK：
 
-[OPPO PasskeySDK 接入文档](https://open.oppomobile.com/new/developmentDoc/info?id=12759)
+::url-card{url="https://open.oppomobile.com/new/developmentDoc/info?id=12759"}
 
 前置条件：
 
@@ -745,9 +756,9 @@ OPPO Passkey API和Credential Manager差不多。
 
 ### 后台实现
 
-[Java库](https://developers.yubico.com/java-webauthn-server/)
+::url-card{url="https://developers.yubico.com/java-webauthn-server/"}
 
-[golang mod](https://github.com/go-webauthn/webauthn)
+::github{repo="go-webauthn/webauthn"}
 
 代码略
 

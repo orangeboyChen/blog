@@ -114,7 +114,9 @@ l_.str:                                 ; @.str
 
 可以很清楚地看到，我们test.c里的函数名，实际变成了汇编里的tag。
 
-重点在两个`bl` 命令里，可参见[ARM文档](https://developer.arm.com/documentation/dui0379/e/arm-and-thumb-instructions/bl)
+重点在两个`bl` 命令里，可参见ARM文档
+
+::url-card{url="https://developer.arm.com/documentation/dui0379/e/arm-and-thumb-instructions/bl"}
 
 > BL: Branch with Link.
 
@@ -231,11 +233,11 @@ otool -l test  grep -A 5 LC_SYMTAB
 
 MACH-O里，符号表又分为符号信息表和字符串表两部分（Linux里的ELF也是一样的）。符号信息的结构如下：
 
-[https://github.com/apple-oss-distributions/xnu/blob/main/EXTERNAL_HEADERS/mach-o/nlist.h](https://github.com/apple-oss-distributions/xnu/blob/main/EXTERNAL_HEADERS/mach-o/nlist.h)
+::url-card{url="https://github.com/apple-oss-distributions/xnu/blob/main/EXTERNAL_HEADERS/mach-o/nlist.h"}
 
-[https://developer.apple.com/documentation/kernel/nlist_64](https://developer.apple.com/documentation/kernel/nlist_64)
+::url-card{url="https://developer.apple.com/documentation/kernel/nlist_64"}
 
-[https://github.com/qyang-nj/llios/blob/main/macho_parser/docs/LC_SYMTAB.md](https://github.com/qyang-nj/llios/blob/main/macho_parser/docs/LC_SYMTAB.md)
+::url-card{url="https://github.com/qyang-nj/llios/blob/main/macho_parser/docs/LC_SYMTAB.md"}
 
 ```c
 struct nlist_64 {

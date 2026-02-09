@@ -26,7 +26,9 @@ AI会什么，我就会什么
 - 📷
 
 ## 跟我相关的项目
+
 ::github{repo="whu-ham/whu-ham.github.io"}
 
 ## 怎么找我
-::github{repo="orangeboyChen/blog"}
+
+::email{address="chenenhan@qq.com" name="orangeboy" avatar="https://avatars.githubusercontent.com/u/27876299"}

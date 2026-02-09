@@ -58,7 +58,9 @@ sequenceDiagram
 
 设备上有一个单独的元器件，负责私钥存储，对外提供签名、加密功能。一般而言，除非硬件设备因存在漏洞被攻陷，硬件私钥无法被提取。
 
-对于iOS来说，整个元器件被称为 [Secure Enclave](https://support.apple.com/guide/security/secure-enclave-sec59b0b31ff/web)
+对于iOS来说，整个元器件被称为 
+
+::url-card{url="https://support.apple.com/guide/security/secure-enclave-sec59b0b31ff/web"}
 
 ::url-card{url="https://support.apple.com/guide/security/secure-enclave-sec59b0b31ff/web"}
 

@@ -22,7 +22,7 @@ category: 开发
 *   HTTP：明文传输。在传输过程有被中间人攻击的可能，即你传输的东西，可能会被别人看到
 *   HTTPS：密文传输。在连接建立前通过多次握手确定密钥，后面进行加密传输。
 
-[HTTP与HTTPS的区别](https://www.runoob.com/w3cnote/http-vs-https.html)
+::url-card{url="https://www.runoob.com/w3cnote/http-vs-https.html"}
 
 ### WebDAV
 
@@ -90,11 +90,19 @@ Nginx是一个很好的反向代理工具，但在代理WebDAV时有个坑：
 
 Nginx Proxy Manager其实是Nginx + CertBot + UI，所以Nginx有的问题，它肯定有解决方法。方法也很简单嘛，就是重新构建一个带模块的Nginx Proxy Manager镜像
 
-查看[jc21/nginx-proxy-manager的Dockerfile](https://github.com/NginxProxyManager/nginx-proxy-manager/blob/develop/docker/Dockerfile)，会发现Nginx是从jc21/nginx-full:certbot-node镜像获取的，因此我们也要构建带模块的jc21/nginx-full:certbot-node
+查看
+
+::url-card{url="https://github.com/NginxProxyManager/nginx-proxy-manager/blob/develop/docker/Dockerfile"}
+
+会发现Nginx是从jc21/nginx-full:certbot-node镜像获取的，因此我们也要构建带模块的jc21/nginx-full:certbot-node
 
 ![](img/image-1024x404.png)
 
-看看[jc21/nginx-full:certbot-node的Dockerfile](https://github.com/NginxProxyManager/docker-nginx-full/blob/master/docker/Dockerfile)，会通过./scripts/build-openrestry脚本去编译nginx
+看看
+
+::url-card{url="https://github.com/NginxProxyManager/docker-nginx-full/blob/master/docker/Dockerfile"}
+
+会通过./scripts/build-openrestry脚本去编译nginx
 
 ![](img/image-2-1024x497.png)
 
@@ -117,7 +125,7 @@ Nginx Proxy Manager其实是Nginx + CertBot + UI，所以Nginx有的问题，它
 
 ### Traefik
 
-[Traefik官网](https://doc.traefik.io/traefik/)
+::url-card{url="https://doc.traefik.io/traefik/"}
 
 因为最近玩云原生比较多，想着既然用Nginx太复杂，那就试试Traefik？
 

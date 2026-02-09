@@ -314,9 +314,7 @@ SZTU印象：嗯，设施不错，就是有点冷清。
 
 小米开源了HomeAssistant集成，这不搞个玩玩？
 
- [GitHub](https://github.com/ "Github")
-
-[XiaoMi/ha_xiaomi_home](https://github.com/XiaoMi/ha_xiaomi_home)
+::github{repo="XiaoMi/ha_xiaomi_home"}
 
 新学的技术栈：
 

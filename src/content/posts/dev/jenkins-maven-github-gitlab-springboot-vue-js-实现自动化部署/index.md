@@ -9,7 +9,7 @@ category: 开发
 
 ## Jenkins的安装
 
-[Jenkins用户文档地址](https://www.jenkins.io/zh/doc/)
+::url-card{url="https://www.jenkins.io/zh/doc/"}
 
 Jenkins在docker环境下安装非常简单。只需要执行命令
 

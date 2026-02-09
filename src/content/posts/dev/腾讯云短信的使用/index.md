@@ -7,7 +7,17 @@ image: ./img/timg.jpg
 category: 开发
 ---
 
-首先你需要开通[腾讯云短信服务](https://console.cloud.tencent.com/smsv2)。开通后，默认会每个月送100条短信。 开通后，点击[快速入门](https://console.cloud.tencent.com/smsv2/guide)，按照教程里进行操作。好的，教程到此结束，谢谢大家的观看（逃
+首先你需要开通
+
+::url-card{url="https://console.cloud.tencent.com/smsv2"}
+
+开通后，默认会每个月送100条短信。 
+
+开通后，点击
+
+::url-card{url="https://console.cloud.tencent.com/smsv2/guide"}
+
+按照教程里进行操作。好的，教程到此结束，谢谢大家的观看（逃
 
 <!-- more -->
 
@@ -21,11 +31,21 @@ category: 开发
 
 ## 3.测试群发
 
-点击侧边栏**xx短信->群发短信**，然后点击**创建群发任务** ![](img/PEM1@JYBZXM9Z5FQ.png) 选择签名、模板、发送时间，按照不同类型填写发送对象。 如果你的短信模板是带变量的，发送对象只能填上传接收号码，然后上传一个excel文件。 ![](img/VEUS091MVDLMOVFEE3F.png) 点击**文件**下[下载标准模板](https://upload-dianshi-1255598498.file.myqcloud.com/smsv2-tpl-zh-20200924-75d09111b4834ee1ff8a60b9414f8a5046b5c0bc.xlsx)下载官方excel模板，然后按照自己的模板变量进行更改。 最后点击**确定**，创建群发任务。注意，群发任务审核后才能进行。
+点击侧边栏**xx短信->群发短信**，然后点击**创建群发任务** ![](img/PEM1@JYBZXM9Z5FQ.png) 选择签名、模板、发送时间，按照不同类型填写发送对象。 如果你的短信模板是带变量的，发送对象只能填上传接收号码，然后上传一个excel文件。 ![](img/VEUS091MVDLMOVFEE3F.png) 点击**文件**下
+
+::url-card{url="https://upload-dianshi-1255598498.file.myqcloud.com/smsv2-tpl-zh-20200924-75d09111b4834ee1ff8a60b9414f8a5046b5c0bc.xlsx"}
+
+下载官方excel模板，然后按照自己的模板变量进行更改。 最后点击**确定**，创建群发任务。注意，群发任务审核后才能进行。
 
 ## 4.通过Java SDK群发短信
 
-[腾讯云短信文档](https://cloud.tencent.com/document/product/382) 首先在**应用管理->应用列表**找到你创建短信签名、模板的应用，记下SDKAppID。 在[API密钥管理](https://console.cloud.tencent.com/cam/capi)创建、获取你的SecretId与SecretKey。 创建项目，并添加Maven依赖
+::url-card{url="https://cloud.tencent.com/document/product/382"} 
+
+首先在**应用管理->应用列表**找到你创建短信签名、模板的应用，记下SDKAppID。 在
+
+::url-card{url="https://console.cloud.tencent.com/cam/capi"}
+
+创建、获取你的SecretId与SecretKey。 创建项目，并添加Maven依赖
 
 ```xml
 <dependency>

@@ -291,6 +291,75 @@ a.card-url
     height: 1rem
     border-radius: 0.25rem
 
+a.card-email
+  display: flex
+  align-items: center
+  gap: 0.9rem
+  background: var(--license-block-bg)
+  position: relative
+  margin: 0.5rem 0
+  padding: 1rem 1.25rem
+  color: var(--tw-prose-body)
+  border-radius: var(--radius-large)
+  text-decoration-thickness: 0px
+  text-decoration-line: none
+
+  &:hover
+    background-color: var(--btn-regular-bg-hover)
+
+    .email-name
+      color: var(--tw-prose-headings)
+
+  &:active
+    scale: .98
+    background-color: var(--btn-regular-bg-active);
+
+  .email-left
+    display: flex
+    align-items: center
+
+  .email-avatar
+    width: 2.5rem
+    height: 2.5rem
+    border-radius: 999px
+    object-fit: cover
+    background: var(--btn-regular-bg)
+
+  .email-avatar.placeholder
+    position: relative
+    overflow: hidden
+
+    &:before
+      content: ''
+      position: absolute
+      inset: 0
+      background: linear-gradient(120deg, transparent, rgba(255,255,255,0.2), transparent)
+      animation: emailShimmer 1.6s infinite
+
+  .email-body
+    flex: 1
+
+  .email-name
+    font-size: 1.05rem
+    font-weight: 600
+    line-height: 1.3
+    color: var(--tw-prose-headings)
+
+  .email-address
+    font-size: 0.9rem
+    opacity: 0.85
+    margin-top: 0.2rem
+
+  .email-icon
+    font-size: 1.1rem
+    opacity: 0.8
+
+@keyframes emailShimmer
+  0%
+    transform: translateX(-100%)
+  100%
+    transform: translateX(100%)
+
 a.card-github-pr
   .gc-pr-number
     font-size: 0.9rem
