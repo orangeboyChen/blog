@@ -26,9 +26,10 @@ interface Props {
 	description?: string;
 	lang?: string;
 	setOGTypeArticle?: boolean;
+	image?: string;
 }
 
-let { title, banner, description, lang, setOGTypeArticle } = Astro.props;
+let { title, banner, description, lang, setOGTypeArticle, image } = Astro.props;
 
 // apply a class to the body element to decide the height of the banner, only used for initial page load
 // Swup can update the body for each page visit, but it's after the page transition, causing a delay for banner height change
@@ -75,6 +76,11 @@ const bannerOffsetByPosition = {
 };
 const bannerOffset =
 	bannerOffsetByPosition[siteConfig.banner.position || "center"];
+
+const ogImage = image ? new URL(
+	image,
+	Astro.site
+) : null;
 ---
 
 <!DOCTYPE html>
@@ -98,6 +104,7 @@ const bannerOffset =
         ) : (
         <meta property="og:type" content="website" />
         )}
+		{ogImage && <meta property="og:image" content={ogImage} />}
 
 		<meta name="twitter:card" content="summary_large_image">
 		<meta property="twitter:url" content={Astro.url}>
