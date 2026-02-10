@@ -3,7 +3,7 @@ title: Kotlin Native编译原理03 - 简单「深入」理解Objective-C运行�
 published: 2026-02-10 13:17:00
 description: ''
 image: ./img/1_iDQ77Lohz3F3tx2Fml1msg.png
-tags: [Kotlin]
+tags: [Kotlin, iOS]
 category: 开发
 ---
 
