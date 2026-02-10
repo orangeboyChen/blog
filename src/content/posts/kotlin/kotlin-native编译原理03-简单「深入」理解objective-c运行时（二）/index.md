@@ -24,7 +24,7 @@ Alan Kay
 
 消息跟方法有什么不同？方法本质上还是函数，只是第一个参数写死为对象地址，所以不能调用动态地往对象里加方法。而消息是让对象执行某个逻辑的**请求**，对象收到消息后内部决定是否处理，以及如何处理消息。不管是编译时还是运行时，给对象发任何消息都是可行的。在实现上，对象内部会有一个类似**消息派发中心**的逻辑，专门负责处理消息。如果消息能被处理，再派发到对应的处理子过程/函数里。
 
-1981年Brad Cox在ITT上班，开始接触SmallTalk。而他也意识到C语言面向过程的局限性，决定给C语言加上Smalltalk的特性。并于1983年，发布了支持Smalltalk对象特性的C语言预编译器：OOPC
+1981年Brad Cox在ITT上班，开始接触Smalltalk。而他也意识到C语言面向过程的局限性，决定给C语言加上Smalltalk的特性。并于1983年，发布了支持Smalltalk对象特性的C语言预编译器：OOPC
 
 ::url-card{url="https://dl.acm.org/doi/pdf/10.1145/948093.948095"}
 
@@ -67,7 +67,10 @@ objc_msgSend(id _Nullable self, SEL _Nonnull op, ...)
 #include <Foundation/Foundation.h>
 #include <objc/message.h>
 
-@implementation MyClass: NSObject
+@interface MyClass: NSObject
+@end
+
+@implementation MyClass
 - (void)sayHi {
 	printf("Hi\n");
 }
@@ -111,6 +114,8 @@ int main() {
 `@selector(sayHi) == NSSelectorFromString(@"sayHi")` ，这也就能说明为什么demo中1和2的执行结果一致。
 
 并且，`"sayHi"` 存在字符串常量区，地址与 `@selector(sayHi)` / `NSSelectorFromString(@"sayHi")` 不同。这也能够说明对于两个selector，Objective-C是通过比对selector的地址来判断是否属于同一条消息，并不是通过简单的字符串比对判断。换句话说，`SEL` 的唯一性来自 `sel_registerName` 的**字符串驻留（intern）**逻辑。
+
+而这种「将字符串当作SEL传入`objc_msgSend`」的行为，属于UB。实际编码过程万万不可这么写。😩
 
 `NSSelectorFromString` 为什么会返回一个指向`__objc_methname` 段里的selector呢？`NSSelectorFromString` 并没有开源，我们写个程序打断点看看。
 
@@ -198,7 +203,7 @@ Foundation`NSSelectorFromString:
     0x18ee87fec <+204>: bl     0x18f8811cc    ; symbol stub for: __stack_chk_fail
 ```
 
-### 欣赏程序
+### NSSelectorFromString 反汇编路径解读
 
 前半部分很简单，是把传入的`NSString`转为`CString`（实际是一个char数组）。先调用`NSString`的`getCString:maxLength:encoding:` ，如果失败就尝试调用`strlen`
 
@@ -422,7 +427,7 @@ static __inline uint32_t _objc_strhash(const char *s) {
 }
 ```
 
-注意 `getHashValue` 和 `isEqual` 两个方法，说明 `DenseSet<const char *>` 是通过字符串本身计算哈希值。所以有两个值相同，但地址不同的字符串存入 `DenseSet<const char*>` ，最后只会存一份字符串，这也能够说明为什么同一个字符串只能对应一个selector。
+注意 `getHashValue` 和 `isEqual` 两个方法，说明 `DenseSet<const char *>` 是通过字符串本身计算哈希值。所以有两个值相同，但地址不同的字符串存入 `DenseSet<const char*>` ，最后只会存一份字符串（是否共享字符串内存取决于 `copy` 参数与是否 `strdupIfMutable`）。这也能够说明为什么同一个字符串只能对应一个selector。
 
 
 
@@ -617,9 +622,9 @@ void _read_images(mapped_image_info infosParam[], uint32_t hCount, int totalClas
 
 发送消息部分，就是Objective-C的精髓。
 
-### 猜想
+### 猜测
 
-已知，对象的isa里存着`baseMethods` ，实际是一个数组，每一项是{SEL & type（传参类型） & 跳转地址 }。所以我们可以猜测：
+已知，对象的isa里存着`baseMethods` ，实际是一个数组，每一项是`{SEL & type（传参类型） & 跳转地址 }`。所以我们可以猜测：
 
 每次调用`objc_msgSend`，都会去对象的 `baseMethods` 里查跳转地址并执行跳转。
 
@@ -716,7 +721,7 @@ LReturnZero:
 其实就是：
 
 1. 如果传入的对象为nil，就直接跳到`LReturnZero`
-2. 否则解析Tagged Pointer拿到真正的isa，存在`x16`
+2. 否则解析Tagged Pointer拿到class 指针，存在`x16`
 
 这里也能够说明，为什么Objective-C里能够对空指针发消息。
 
@@ -1341,7 +1346,7 @@ LTailCallCachedImpIndirectBranch:
 
 
 
-```C
+```c
 NEVER_INLINE
 IMP lookUpImpOrForward(id inst, SEL sel, Class cls, int behavior)
 {
@@ -1978,4 +1983,4 @@ log_and_fill_cache(Class cls, IMP imp, SEL sel, id receiver, Class implementer)
 
 本文稍微深入得讲了下`objc_msgSend`的原理。我本来以为，`objc_msgSend`无非就是一个类似于消息中心一样的东西，没想到Apple针对这个做了很多非常细致的性能优化。
 
-目前为止，Objective-C运行时的部分已经全部完结了🤮。接下来，终于可以回到Kotlin Native部分。
+目前为止，Objective-C运行时消息派发的部分已经全部完结了🤮。接下来，终于可以回到Kotlin Native部分。

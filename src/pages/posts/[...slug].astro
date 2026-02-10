@@ -1,4 +1,5 @@
 ---
+import { getImage } from "astro:assets";
 import path from "node:path";
 import License from "@components/misc/License.astro";
 import Markdown from "@components/misc/Markdown.astro";
@@ -7,15 +8,14 @@ import { i18n } from "@i18n/translation";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { getSortedPosts } from "@utils/content-utils";
 import { getDir, getPostUrlBySlug } from "@utils/url-utils";
-import { getImage } from "astro:assets";
 import type { ImageMetadata } from "astro";
 import { Icon } from "astro-icon/components";
 import { licenseConfig } from "src/config";
+import Comments from "../../components/Comments";
 import ImageWrapper from "../../components/misc/ImageWrapper.astro";
 import PostMetadata from "../../components/PostMeta.astro";
 import { profileConfig, siteConfig } from "../../config";
 import { formatDateToYYYYMMDD } from "../../utils/date-utils";
-import Comments from "../../components/Comments";
 
 export async function getStaticPaths() {
 	const blogEntries = await getSortedPosts();
@@ -54,10 +54,16 @@ if (coverImage) {
 	if (typeof coverImage === "string") {
 		const trimmed = coverImage.trim();
 		if (trimmed !== "") {
-			if (trimmed.startsWith("http") || trimmed.startsWith("https") || trimmed.startsWith("data:")) {
+			if (
+				trimmed.startsWith("http") ||
+				trimmed.startsWith("https") ||
+				trimmed.startsWith("data:")
+			) {
 				ogImageUrl = trimmed;
 			} else if (trimmed.startsWith("/")) {
-				ogImageUrl = Astro.site ? new URL(trimmed, Astro.site).toString() : trimmed;
+				ogImageUrl = Astro.site
+					? new URL(trimmed, Astro.site).toString()
+					: trimmed;
 			} else {
 				const files = import.meta.glob<ImageMetadata>("../../**", {
 					import: "default",

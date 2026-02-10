@@ -1,7 +1,7 @@
-import { h } from "hastscript";
-import { visit } from "unist-util-visit";
 import fs from "node:fs";
 import path from "node:path";
+import { h } from "hastscript";
+import { visit } from "unist-util-visit";
 
 const cache = new Map();
 const cachePath = path.resolve(".cache", "url-card-cache.json");
@@ -41,24 +41,26 @@ function decodeHtml(input) {
 
 function extractMeta(html) {
 	const meta = {};
-	const titleMatch = html.match(
-		new RegExp("<title[^>]*>([^<]*)</title>", "i"),
-	);
+	const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
 	if (titleMatch) meta.title = decodeHtml(titleMatch[1].trim());
 
 	const metaTagRe = /<meta\s+[^>]*>/gi;
-	const attrRe = /([a-zA-Z:_-]+)\s*=\s*(\"[^\"]*\"|'[^']*'|[^\s\"'>]+)/g;
+	const attrRe = /([a-zA-Z:_-]+)\s*=\s*("[^"]*"|'[^']*'|[^\s"'>]+)/g;
 
 	const metaMap = {};
 	let tag;
-	while ((tag = metaTagRe.exec(html))) {
+	while (true) {
+		const tagMatch = metaTagRe.exec(html);
+		if (!tagMatch) break;
+		tag = tagMatch[0];
 		const attrs = {};
-		let m;
-		while ((m = attrRe.exec(tag[0]))) {
-			const key = m[1].toLowerCase();
-			let value = m[2] || "";
+		while (true) {
+			const attrMatch = attrRe.exec(tag);
+			if (!attrMatch) break;
+			const key = attrMatch[1].toLowerCase();
+			let value = attrMatch[2] || "";
 			if (
-				(value.startsWith("\"") && value.endsWith("\"")) ||
+				(value.startsWith('"') && value.endsWith('"')) ||
 				(value.startsWith("'") && value.endsWith("'"))
 			) {
 				value = value.slice(1, -1);
@@ -75,39 +77,33 @@ function extractMeta(html) {
 	meta.ogImage = metaMap["og:image"];
 	meta.twitterTitle = metaMap["twitter:title"];
 	meta.twitterDescription = metaMap["twitter:description"];
-	meta.description = metaMap["description"] || meta.description;
+	meta.description = metaMap.description || meta.description;
 
 	return meta;
 }
 
 function stripTags(input) {
 	return input
-		.replace(new RegExp("<script[^>]*>[\\s\\S]*?</script>", "gi"), "")
-		.replace(new RegExp("<style[^>]*>[\\s\\S]*?</style>", "gi"), "")
+		.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+		.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
 		.replace(/<[^>]+>/g, "")
-		.replace(/\\s+/g, " ")
+		.replace(/\s+/g, " ")
 		.trim();
 }
 
 function extractWikipediaIntro(html) {
 	const contentMatch = html.match(
-		new RegExp(
-			"<div[^>]+id=[\"']mw-content-text[\"'][^>]*>([\\s\\S]*?)</div>",
-			"i",
-		),
+		/<div[^>]+id=["']mw-content-text["'][^>]*>([\s\S]*?)<\/div>/i,
 	);
 	if (!contentMatch) return "";
 	const content = contentMatch[1];
 	const paraMatch = content.match(
-		new RegExp(
-			"<div[^>]*class=[\"'][^\"']*mw-parser-output[^\"']*[\"'][^>]*>[\\s\\S]*?<p[^>]*>([\\s\\S]*?)</p>",
-			"i",
-		),
+		/<div[^>]*class=["'][^"']*mw-parser-output[^"']*["'][^>]*>[\s\S]*?<p[^>]*>([\s\S]*?)<\/p>/i,
 	);
 	if (!paraMatch) return "";
 	let text = stripTags(paraMatch[1]);
 	// remove citation markers like [1]
-	text = text.replace(/\\s*\\[[0-9]+\\]/g, "");
+	text = text.replace(/\s*\[[0-9]+\]/g, "");
 	return text;
 }
 
