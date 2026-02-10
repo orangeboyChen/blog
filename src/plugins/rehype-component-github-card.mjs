@@ -134,7 +134,11 @@ export function GithubPrCardComponent(properties, children) {
 		"Waiting for api.github.com...",
 	);
 	const nState = h(`div#${cardUuid}-state`, { class: "gc-pr-state" }, "OPEN");
-	const nAuthor = h(`div#${cardUuid}-author`, { class: "gc-pr-author" }, "author");
+	const nAuthor = h(
+		`div#${cardUuid}-author`,
+		{ class: "gc-pr-author" },
+		"author",
+	);
 	const nUpdated = h(
 		`div#${cardUuid}-updated`,
 		{ class: "gc-pr-updated" },
@@ -194,7 +198,11 @@ export function GithubPrCardComponent(properties, children) {
 		[
 			nTitlebar,
 			nTitle,
-			h("div", { class: "gc-infobar gc-pr-infobar" }, [nState, nAuthor, nUpdated]),
+			h("div", { class: "gc-infobar gc-pr-infobar" }, [
+				nState,
+				nAuthor,
+				nUpdated,
+			]),
 			nScript,
 		],
 	);

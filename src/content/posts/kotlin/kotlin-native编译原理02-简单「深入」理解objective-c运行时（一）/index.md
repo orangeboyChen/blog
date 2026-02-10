@@ -319,13 +319,13 @@ L_OBJC_IMAGE_INFO:
 着重关注下`[MyClass alloc]` 和`[obj init]`的逻辑：
 
 *   [MyClass alloc] ：调用`_objc_alloc` ，参数为`_OBJC_CLASSLIST_REFERENCES` 符号值，实际就是`_OBJC_CLASS_$_MyClass符号`
-*   [obj init]：调用`_objc_msgSend$sayHello`，参数为`[MyClass alloc]` 创建的对象地址
+*   [obj init]：调用`_objc_msgSend$init`，参数为`[MyClass alloc]` 创建的对象地址
 
 这时候有意思的地方就来了：
 
 对于第一个，我们可以直接判断`_objc_alloc` 原型就在objc4里。至于传参具体是什么，我们可以通过objc4的源码分析；
 
-对于第二个，汇编代码里没有`_objc_msgSend$sayHello` \text{符号，所以最后是怎么通过编译的？并且，我们从前面的编译结果可以得知，}`_objc_msgSend$sayHello` 并不是外部符号，那么这个符号是从哪冒出来的？
+对于第二个，汇编代码里没有`_objc_msgSend$init` 符号，所以最后是怎么通过编译的？并且，我们从前面的编译结果可以得知，`_objc_msgSend$init` 并不是外部符号，那么这个符号是从哪冒出来的？
 
 恭喜你，发现了**Improve app size and runtime performance**
 
@@ -354,7 +354,7 @@ ldr x1, [x1, selector sayHello地址]
 bl _objc_msgSend
 ```
 
-这样如果`[objc sayHello]` 被多次调用，按照原来的方式就需要执行3\*n条指令，而按照新的方式只需执行3+n条指令，获得了3倍的性能提升！当然，这个优化需要前端跟链接器一起做。前端负责把`[objc sayHello]` 编译成`bl _objc_msgSend$sayHello` \text{，链接器负责生成}`_objc_msgSend$sayHello` 的跳板代码。
+这样如果`[objc sayHello]` 被多次调用，按照原来的方式就需要执行3\*n条指令，而按照新的方式只需执行3+n条指令，获得了3倍的性能提升！当然，这个优化需要前端跟链接器一起做。前端负责把`[objc sayHello]` 编译成`bl _objc_msgSend$sayHello` ，链接器负责生成`_objc_msgSend$sayHello` 的跳板代码。
 
 所以代价是什么？代价是作为coder，我们不能使用类似`_objc_msgSend$xxxx` 这样的符号了。
 
@@ -490,10 +490,12 @@ struct class_ro_t {
 
 并且可以确定在文件映像里，这几个结构体存在以下持有关系：
 
+```mermaid
 flowchart LR
-objc_object --> objc_class
+  objc_object --> objc_class
   objc_class --> class_ro_t
   class_ro_t --> method_list_t
+```
 
 并且，`class_ro_t`里存着：
 
