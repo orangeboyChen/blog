@@ -62,8 +62,6 @@ sequenceDiagram
 
 ::url-card{url="https://support.apple.com/guide/security/secure-enclave-sec59b0b31ff/web"}
 
-::url-card{url="https://support.apple.com/guide/security/secure-enclave-sec59b0b31ff/web"}
-
 Security Enclave（SEP）是单独的元器件，有自己的SoC、内存，甚至有自己的操作系统。iOS内核跟SEP只能通过Mailbox通信，iOS内核无法直接操作SEP。并且在与内核的通信过程，还有很多验证方法防止各种攻击，确保SEP内存空间是可信的。
 
 对于安卓，现代的安卓设备，一般会有TEE或StrongBox。实现原理和iOS的SEP可能不相同，但大体原理是一致的。

@@ -564,7 +564,7 @@ map_images_nolock(unsigned mhCount, const struct _dyld_objc_notify_mapped_info i
 
 
 
-::url-card={url="https://github.com/apple-oss-distributions/objc4/blob/fb265098298302243cd7eeaa1f63f0ba7786dd9a/runtime/objc-runtime-new.mm"}
+::url-card{url="https://github.com/apple-oss-distributions/objc4/blob/fb265098298302243cd7eeaa1f63f0ba7786dd9a/runtime/objc-runtime-new.mm"}
 
 
 

@@ -2,7 +2,7 @@
 title: 提升APP冷启动速度-iOS篇
 published: 2026-02-10 22:07:00
 description: ''
-image: ''
+image: ./img/header.png
 tags: [iOS]
 category: 开发
 ---
@@ -22,6 +22,16 @@ Xcode贴心地为我们准备好了耗时排查工具**App Launch**
 ![](img/measure.png)
 
 ## 测量
+
+设备信息：
+
+- iPhone 13
+
+- 系统 iOS 26.0.2
+
+  
+
+启动过程：强杀APP并打开多个其他APP，避免dyld缓存优化启动速度。
 
 ![](./img/progress.png)
 
@@ -82,7 +92,7 @@ APP初始化完成，用户看到APP第一帧。
 
 ![](./img/Screenshot%202026-02-11%20at%2011.26.49.png)
 
-Ham里带日程功能，日程数据存在Realm数据库里。 `StatusScheduleCard` 是一张状态卡片，用来展示用户的日程情况（见上图）。`StatusScheduleCard`为什么会卡主线程呢？我们看看代码：
+Ham里带日程功能，日程数据存在Realm数据库里。 `StatusScheduleCard` 是一张状态卡片，用来展示用户的日程情况（见上图）。`StatusScheduleCard`为什么会卡主线程？我们看看代码：
 
 ```swift
 import SwiftUI
@@ -111,16 +121,16 @@ struct StatusScheduleCard: View {
 
 结合trace，这下我们明白了：
 
-APP在渲染第一帧时会创造根View的struct，而因为日程卡要立刻上屏，因此也会初始化`StatusScheduleCard`。`StatusScheduleCard` 里有一个属性`scheduleItemList`，被`ObservedResults`的`Property Wrapper` wrap了。
+APP在渲染第一帧时会创造根View的struct，而因为日程卡要立刻上屏，因此也会初始化`StatusScheduleCard`。`StatusScheduleCard` 里有一个属性`scheduleItemList`，被`ObservedResults` wrap了。
 
 `StatusScheduleCard`上屏时需要获取前五项日程数据，此时访问`scheduleList[i]`，实际会触发Realm数据库的初始化。在渲染View时初始化数据库，当然会卡啦😭
 
-当然，这个问题不能怪开发者，只能说明是框架本身的缺陷：开发者也不知道这个`@ObservedResults`会导致主线程读取数据库啊😭😭
+当然，这个问题不能怪开发者，只能说明是框架本身的缺陷：开发者也不知道这个`@ObservedResults`的lazy fetch会在主线程读取数据库啊😭😭
 
 怎么解决呢：
 
-1. 延时加载日程卡。在T3阶段后再加载+展示
-2. 放弃使用`@ObservedResults`，使用传统方式打开Realm获取数据。
+1. 延时加载日程卡。在T3阶段后再加载+展示。
+2. 放弃使用`@ObservedResults`，使用传统方式+线程切换打开Realm获取数据。
 
 ```swift
 // StatusScheduleCard.swift
@@ -192,7 +202,7 @@ class StatusScheduleCardViewModel: ObservableObject, StatusCardViewModel {
 
 ### 校巴卡优化
 
-除了日程卡，校巴卡也占据了很多时间。为什么呢？初始化的时候居然在创建WebView！
+除了日程卡，校巴卡也占据了很多时间，初始化的时候居然在创建WebView！
 
 ![](./img/bus-card-trace.png)
 
@@ -225,9 +235,9 @@ struct CommonStatusCard<Content: View>: View {
     }
 ```
 
-`CommonStatusView`会在初始化时**直接**执行`navDest`，并保存在`AnyView`里。这里的`navDest`毫无疑问就是`BusView`。所以，在`CommonStatusCard`时会初始化二级页里的所有内容。本质上来说，是`CommonStatusView`编码不合理引起的。
+`CommonStatusView`在初始化时会**直接**执行`navDest`，并保存在`AnyView`里。所以，`CommonStatusView`初始化时，会初始化二级页里的内容。本质上说，是`CommonStatusView`编码不合理引起了这个问题。
 
-怎么解决呢？最佳的解决方法是，`CommonStatusView`里不应使用`AnyView`，改成存`ViewBuilder`。但是后期因为Ham的导航架构从`NavigationView`迁移至`NavigationStack`，这样`navDest`里就不用真传一个`ViewBuilder`进来，只用传一个Route就好了，也就没有了改造的烦恼。
+最佳的解决方法是，`CommonStatusView`里就不该使用`AnyView`，应使用`ViewBuilder`去存View。后期Ham的导航架构从`NavigationView`迁移至`NavigationStack`，这样`navDest`里就不用真传一个`ViewBuilder`进来，只用传一个Route就好了，也就没有了改造的烦恼。
 
 ### ViewModel初始化优化
 
@@ -278,7 +288,7 @@ class StatusContentViewModel: ObservableObject, @MainActor StatusCardController 
   	...
 ```
 
-这些卡片的`ViewModel`在创建时会做什么呢？
+这些卡片的`ViewModel`在创建时：
 
 `StatusBusCardViewModel`：初始化数据并开始定位
 
@@ -312,7 +322,7 @@ class StatusCourseCardViewModel: ObservableObject, StatusCardViewModel {
 
 这些操作都是需要耗时的，真的有那么需要在T2时刻就要做吗？能否挪到T3再开始做呢？
 
-当然可以！但首先有个问题，我们怎么知道T3是否开始呢？好在，Apple提供了一个通知`willEnterForegroundNotification`。外层的`ViewModel`接收到该通知后，再调用每张卡片的`ViewModel`初始化即可。
+当然可以！但首先有个问题，T3时刻什么时候开始呢？好在，Apple提供了一个通知`didBecomeActiveNotification`。外层的`ViewModel`接收到该通知后，再调用每张卡片的`ViewModel`初始化即可。但是注意，这个`didBecomeActiveNotification`可能会触发多次，我们在代码层面上需要去重。
 
 ```swift
 // StatusView.swift
@@ -328,7 +338,7 @@ struct StatusView: View {
   ...
 ```
 
-但还有个问题，冷启动后第一帧时，因为没有数据，屏幕上不会展示任何卡片了。这显然不是我们想要的。接下来的**缓存**章节，就是为了解决这一点。
+冷启动后第一帧时，因为没有数据，屏幕上不会展示任何卡片了，这显然不是我们想要的。接下来的**缓存**章节，就是为了解决这一点。
 
 ### 缓存
 
@@ -338,15 +348,15 @@ struct StatusView: View {
 
 「执行刷新步骤」其实很好理解，这和我们的优化方案一致，在T3时刻再执行重逻辑。但是，「展示上次的数据」是怎么做到的？
 
-或许可以...直接打开db获取数据？但这不才在**日程卡优化**补的坑嘛，冷启动阶段尽量不能操作重逻辑的IO。那怎么办呢？
+或许可以...直接打开db获取数据？但这不才在**日程卡优化**补的坑嘛，冷启动阶段尽量不能操作重逻辑的IO。
 
 答案如下：把要展示的首帧数据，保存在`UserDefault`里。
 
-可能有人会说：
+但是：
 
 > `UserDefault` 的原理也是读文件做IO啊，首次访问也会非常慢。
 
-但是，**这也总比打开数据库要强**。
+不过，**这也总比打开数据库要强**。
 
 以天气卡为例：
 
@@ -412,7 +422,7 @@ class StatusWeatherCardViewModel: ObservableObject, LocationListener, StatusCard
 
 状态卡的背景图片，是需要从网络上拉取的。冷启动时还没有拉取图片时，怎么办？
 
-首先，这里的背景图片使用`SDWebImage` 组件。为什么用它？因为它支持图片**硬盘缓存**。也就意味着，冷启动时只要你传入缓存图片的链接，那么图片会从本地取出并加载。
+首先，这里的背景图片使用`SDWebImage` 组件，因为它支持图片**硬盘缓存**。也就意味着，冷启动时只要传入上次展示图片的链接，图片会从本地取出并加载。
 
 ```swift
 // StatusBackgroundView.swift
@@ -448,7 +458,7 @@ struct StatusBackgroundView: View {
 }
 ```
 
-那什么时候更新图片数据呢？在T3时刻。而如果返回的图片url列表里，存在当前图片地址，那么就不需要更新缓存了。
+在T3时刻更新图片链接数据。如果返回的图片链接列表里，存在当前展示的图片链接，就不需要更新缓存了。
 
 ```swift
 // StatusBackgroundViewModel.swift
@@ -509,9 +519,9 @@ class StatusBackgroundViewModel: ObservableObject {
 
 #### React Native模块初始化
 
-为什么这里为什么会牵涉到React Native？虽然React Native在二级页里才会用到，但是在APP初始化时更新bundle是有必要的。不过，没有必要因为这个占据冷启动时间。
+为什么会牵涉到React Native？虽然在二级页里才会用到React Native，但是APP初始化阶段更新bundle是有必要的。不过，这个更新并不紧急，没有必要因为这个占据冷启动时间。
 
-首先，在`ContentView`上overlay一个RNView，老版本如此：
+首先，在`ContentView`上overlay一个RNView（老版本也是如此）：
 
 ```swift
 // ContentView.swift
@@ -549,9 +559,7 @@ struct RNCommonView: View {
 }
 ```
 
-`RNContainerAsyncView`是什么？其实就是跑了个task去初始化RNView，为了不占渲染队列。
-
-为什么不把task放在子线程里呢？因为React Native不支持在子线程初始化。
+`RNContainerAsyncView`其实就是跑了个task去初始化RNView，为了不占渲染队列。而且因为React Native不支持在子线程初始化，还不能把task放在子线程里。
 
 ```swift
 struct RNContainerView: UIViewRepresentable {
@@ -600,6 +608,10 @@ React Native的代码，可参考：
 
 ::github{repo="whu-ham/ham-rn"}
 
+### 优化后
+
+该阶段市场骤降至152ms。
+
 ## System Interface Initialization优化
 
 看看该项的trace，发现有一堆的Map image:
@@ -619,6 +631,15 @@ platform :ios, '15.1'
 -use_frameworks!
 +use_frameworks! :linkage => :static
 ```
+
+但是，将Pods改成静态链接引入会导致包体积增大。不过，用少部分包体积增长换来更快的冷启动速度，是一个值得的trade-off。
+
+完工后：
+
+- 动态库数量急剧减少
+- 该阶段启动市场优化至 350.04 ms，立省350ms
+
+![](./img/Screenshot%202026-02-11%20at%2014.20.18.png)
 
 ## 启动队列
 
@@ -727,7 +748,7 @@ class SecondaryAsyncColdStartTask: ColdStartActionTask {
 
 `onPrepareLaunch` 对应 `willFinishLaunchingWithOptions`，而`doColdStart` 对应`didFinishLaunchingWithOptions`。
 
-为什么效果不大呢？因为所有的task几乎都是在主线程上跑的。包括`SecondaryAsyncColdStartTask`，因为在主线程域开的Task，也是由主线程调度。
+为什么效果不大？因为所有的task几乎都是在主线程上跑的。包括`SecondaryAsyncColdStartTask`，因为在主线程域开的Task，也是由主线程调度。
 
 ### 子任务Task改Detach
 
@@ -749,9 +770,11 @@ Task.detached(name: "ColdStartTask", priority: .background) {
 
 这样可以不继承`MainActor`的上下文，减缓主线程压力。
 
+但是，detach是有风险的，你必须要确保任务能detach才能这么做。
+
 ### 添加idle队列
 
-idle什么时候执行？在APP首帧展示时触发。
+idle阶段在APP首帧展示时触发。
 
 ```swift
 // MainView.swift
@@ -874,12 +897,30 @@ class ColdStartManager {
 }
 ```
 
+目前的启动队列：
+
+- 必须启动前完成（主线程/同步依赖）
+- 可异步但需尽快（后台异步）
+- idle 触发（完全可延迟）
+
 然后，我们把各冷启动Task按照需要放进不同的队列里。
 
 举个例子，像Firebase这种监测崩溃的SDK，需要在启动时就初始化，因此放在`PrimaryMainColdStartTask`里；
 
 而像QQ SDK这种不急于初始化的操作，就可以放在`IdleAsyncColdStartTask` 里。
 
-## 成果
+## 成果与反思
+
+优化前：
+
+![](./img/before.png)
+
+优化后：
+
+![](./img/after.png)
 
 优化后，APP的启动时间骤降至平均500ms，最快仅需300ms。
+
+当然，这个过程也充满了各种坑。比如我把Firebase的SDK初始化过程放到idle阶段，会导致APP启动即崩溃的上报失效。还有，我把Xlog的初始化放在子线程，导致部分日志丢失。本质上，启动任务队列本身就是一个不断权衡（trade-off）的过程。
+
+好在，经过大量反复测试与调整，我最终拿到了一个稳定可运行的启动队列。
