@@ -3,7 +3,7 @@ title: Kotlin Native编译原理03 - 简单「深入」理解Objective-C运行�
 published: 2026-02-10 13:17:00
 description: ''
 image: ./img/1_iDQ77Lohz3F3tx2Fml1msg.png
-tags: [Kotlin]
+tags: [Kotlin, iOS]
 category: 开发
 ---
 
@@ -564,7 +564,7 @@ map_images_nolock(unsigned mhCount, const struct _dyld_objc_notify_mapped_info i
 
 
 
-::url-card={url="https://github.com/apple-oss-distributions/objc4/blob/fb265098298302243cd7eeaa1f63f0ba7786dd9a/runtime/objc-runtime-new.mm"}
+::url-card{url="https://github.com/apple-oss-distributions/objc4/blob/fb265098298302243cd7eeaa1f63f0ba7786dd9a/runtime/objc-runtime-new.mm"}
 
 
 
