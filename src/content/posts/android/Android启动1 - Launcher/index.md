@@ -1,50 +1,38 @@
 ---
-title: Android底层1-Launcher进程的创建
-id: android-internals-launcher-process
+title: Android底层1-从 Zygote 到 Launcher
+id: android-internals-01-launcher-process
 published: 2026-02-12 14:59:00
 description: ''
 image: ''
 tags: [Android]
 category: 开发
-draft: true
 ---
 
-> 这个是我新开的专栏。其实这方面的知识，我从前年就开始学习了。但是因为这部分知识在工作中很少用到，并且我日常的主力机型是iPhone，导致这里的知识一直处于学了忘、忘了学的状态。
->
-> 最近我在折腾[客户端层面的硬件认证](/posts/mtls-to-cold-wallet-key-security-and-hardware-trust/)。但是不幸的是，经过跟HsukqiLee的友好交流，我们发现这个认证流程仍然有漏洞。于是乎，我又开始学习Android设备启动的流程，试图弄清 StrongBox / TEE 所依赖的可信执行环境究竟是否真正可信。
->
-> 这下得把学习的东西记录在博客里了，不然过一会又忘了。好在，最后的结论是StrongBox / TEE 所依赖的可执行环境仍然是可信的。有面具模块能“绕过“硬件证书认证，是因为Hook了Android KeyStore的Java层接口，用泄漏的硬件根证书完成签名。详见：
->
-> ::github{repo="hanakim3945/bl_sbx"}
+:::note
+本文覆盖：Zygote → system_server → AMS/ATMS → Launcher 进程 → Launcher Activity 首帧。
+暂时不讲 Bootloader / init / Kernel。
 
-**从手指点击屏幕上的APP Icon，到新的Activity被拉起，软件过程中间发生了什么？**
 
-这个问题本来是我公司组内的一个技术分享选题，并且是我主推的。但是，后来有人觉得这个题目**对开发无帮助**，把选题改成了《TXSP启动流程分享》。
 
-我想：我草，这有什么好分享的？自己去看代码不就行了吗？当然，因为我当时的话语权不够，也不好说什么。~~果然一旦涉及到底层知识，就知道谁在裸泳。~~不过，既然公司内无法分享，那我就把这部分的知识整理成一篇博客吧。
+因为Android的启动流程太繁琐了😭，而用户看到的第一个东西就是Launcher，因此从Launcher开始讲起。
+:::
+
 
 ## Launcher3
 
-首先，Android是支持多Launcher的！如果你在2015年用过Android，就会知道那会最流行的Launcher是仿Windows Phone的Launcher。不过，现在各厂商的Launcher已经做得很好了，默认的Lanucher还可能还会用到定制系统提供的私有API做一些功能，因此换Launcher的需求越来越小了。
+首先，Android是支持多Launcher的！2015年那会，最流行的Launcher是仿Windows Phone的Launcher。不过，现在各厂商的Launcher已经做得很好了。默认的Lanucher还可能会用到定制ROM提供的私有API，目前换Launcher的需求越来越小了。
 
-Launcher3是AOSP的默认启动器。各厂商的Launcher，几乎是基于Launcher3做定制开发的。因此，我们只需要看Launcher3的源码，就可以大致了解Android APP在桌面点击时的启动流程。
+Launcher3是AOSP的默认启动器。各厂商ROM的Launcher，几乎是基于Launcher3做定制开发的。因此，我们只需要看Launcher3的源码，就可以大致了解Android APP在桌面点击时的启动流程。
 
 Launcher3代码：
 
 ::url-card{url="https://cs.android.com/android/platform/superproject/+/master:packages/apps/Launcher3/src/com/android/launcher3/"}
 
-本文基于Launcher3讲解。
+本文也将基于Launcher3讲解。
 
-## Launcher声明
+## Launcher的声明
 
-Android系统启动后，是怎么拉起Launcher的？
-
-首先，Launcher是Android系统初始化后启动的第一个**用户可见的前台APP**。系统怎么知道哪些APP是Launcher？Launcher APP，需要在`AndroidManifest.xml` 里添加声明。
-
-> 很多文章都是从Bootloader讲起，但是为什么我要从Launcher开始讲呢？
->
-> 1. 因为Launcher可见，从这里开始切入很好理解
-> 2. 本来这部分的内容是写在冷启动系列的文章里的。但是因为篇幅太长，被我单独抽出来了。
+Launcher是Android系统初始化后启动的第一个**用户可见的前台APP**。所以，系统需要在启动后，拉起Launcher APP。但是，系统怎么知道哪些APP是Launcher？这是因为，所有Launcher APP，都需要在`AndroidManifest.xml` 里添加声明。
 
 以Launcher3为例：
 
@@ -74,46 +62,623 @@ Android系统启动后，是怎么拉起Launcher的？
 	...
 ```
 
-## 创建Launcher进程
+这里先抛出一个问题：
 
+- Android是怎么扫描Launcher里的`AndroidManifest.xml`的？
 
+后续我们将解决这些抛出的问题。我们现在先看Launcher进程创建前的过程。
 
-### ZygoteInit
+## Zygote的创建
 
-在设备启动后，native层调用`ZygoteInit`，会直接走到`main` 方法。
+首先，Android的每一个APP，都对应着至少一个进程。而Zygote，就是所有进程的祖先。为什么这么说，因为APP内的所有进程，**都是Zygote fork的**。（Zygote这个名字，真的取得太好了！）
+
+::url-card{url="https://source.android.com/docs/core/runtime/zygote?hl=en"}
+
+但是，这个祖先，是怎么创建的？这个很简单，Android代码上就写死了，系统启动后直接执行`/system/bin/init`进程（PID=1）。要了解`init`进程在做什么，那就要先了解一下`init.rc`。
+
+::url-card{url="https://android.googlesource.com/platform/system/core/+/master/init/README.md"}
+
+`init.rc`其实是一个配置脚本，告诉`init`进程：
+
+- 启动哪些系统进程
+- 启动时机
+- 设置系统参数
+
+- 响应系统事件
+
+`init`进程的入口在`main.cpp`里：
+
+::url-card{url="https://cs.android.com/android/platform/superproject/main/+/main:system/core/init/main.cpp"}
+
+```cpp
+// main.cpp
+// ...
+using namespace android::init;
+
+int main(int argc, char** argv) {
+#if __has_feature(address_sanitizer)
+    __asan_set_error_report_callback(AsanReportCallback);
+#elif __has_feature(hwaddress_sanitizer)
+    __hwasan_set_error_report_callback(AsanReportCallback);
+#endif
+    // Boost prio which will be restored later
+    setpriority(PRIO_PROCESS, 0, -20);
+    if (!strcmp(basename(argv[0]), "ueventd")) {
+        return ueventd_main(argc, argv);
+    }
+
+    if (argc > 1) {
+        if (!strcmp(argv[1], "subcontext")) {
+            android::base::InitLogging(argv, &android::base::KernelLogger);
+            const BuiltinFunctionMap& function_map = GetBuiltinFunctionMap();
+
+            return SubcontextMain(argc, argv, &function_map);
+        }
+
+        if (!strcmp(argv[1], "selinux_setup")) {
+            return SetupSelinux(argv);
+        }
+
+        if (!strcmp(argv[1], "second_stage")) {
+            return SecondStageMain(argc, argv);
+        }
+    }
+
+    return FirstStageMain(argc, argv);
+}
+```
+
+恭喜你，发现了Android大名鼎鼎的**多阶段启动**
+
+### 多阶段启动
+
+我们先假设一种情况。假设`argc`为空，那么就会直接走到`FirstStageMain`。这个函数代码在`first_state_init.cpp`里，我们接着看看具体实现：
+
+::url-card{url="https://cs.android.com/android/platform/superproject/main/+/main:system/core/init/first_stage_init.cpp"}
+
+代码我暂时不贴了，其实主要做了：
+
+- mount /proc /sys
+- 初始化 device node
+- 加载 sepolicy
+
+但是，最后一部分的代码很有意思：
+
+```cpp
+// main.cpp
+int FirstStageMain(int argc, char** argv) {
+  // ...
+  const char* path = "/system/bin/init";
+    const char* args[] = {path, "selinux_setup", nullptr};
+    auto fd = open("/dev/kmsg", O_WRONLY | O_CLOEXEC);
+    dup2(fd, STDOUT_FILENO);
+    dup2(fd, STDERR_FILENO);
+    close(fd);
+    execv(path, const_cast<char**>(args));
+
+    // execv() only returns if an error happened, in which case we
+    // panic and never fall through this conditional.
+    PLOG(FATAL) << "execv(\"" << path << "\") failed";
+
+    return 1;
+}
+```
+
+唉，当前不就是在`init`进程吗？为什么又会启动一次`init`进程呢？细心看发现，这里传了一个参数，`selinux_setup`。而我们再看看`main.cpp`，就会发现这时就不会执行`FirstStageMain`了，而是`SetupSelinux`。说明这个`main.cpp`，其实是一个**有限状态机**。
+
+---
+
+我们梳理一下`main.cpp`的流程：
+
+::url-card{url="https://cs.android.com/android/platform/superproject/main/+/main:system/core/init/selinux.cpp"}
+
+::url-card{url="https://cs.android.com/android/platform/superproject/main/+/main:system/core/init/init.cpp"}
+
+1. `FirstStageMain`
+   - mount /proc /sys
+   - 初始化 device node
+   - 加载 sepolicy
+2. `SetupSelinux`
+   - apply selinux policy
+   - sepolicy
+
+3. `SecondStageMain`
+   - property service
+   - 解析`init.rc`
+   - 启动zygote
+
+---
+
+接下来，到了解析`init.rc`并执行的部分。我们来看个`init.rc`的例子：
+
+::url-card{url="https://cs.android.com/android/platform/superproject/main/+/main:system/core/rootdir/init.rc;l=192?q=init.rc"}
+
+```txt
+# ...
+import /system/etc/init/hw/init.${ro.zygote}.rc
+
+# Cgroups are mounted right before early-init using list from /etc/cgroups.json
+# ...
+```
+
+注意这里的`import /system/etc/init/hw/init.${ro.zygote}.rc`，`ro.zygote`是什么呢？其实，这是Android编译时的参数，在构建时期指定。我们也可以通过：
+
+```shell
+adb shell getprop ro.zygote
+```
+
+拿到这个参数具体值。
+
+我们以`ro.zygote=zygote64`为例，对应的rc文件就是`system/core/rootdir/init.zygote64.rc`。
+
+::url-card{url="https://cs.android.com/android/platform/superproject/main/+/main:system/core/rootdir/init.zygote64.rc"}
+
+```txt
+service zygote /system/bin/app_process64 -Xzygote /system/bin --zygote --start-system-server --socket-name=zygote
+    class main
+    priority -20
+    user root
+    group root readproc reserved_disk
+    socket zygote stream 660 root system
+    socket usap_pool_primary stream 660 root system
+    onrestart exec_background - system system -- /system/bin/vdc volume abort_fuse
+    onrestart write /sys/power/state on
+    # NOTE: If the wakelock name here is changed, then also
+    # update it in SystemSuspend.cpp
+    onrestart write /sys/power/wake_lock zygote_kwl
+    onrestart restart audioserver
+    onrestart restart cameraserver
+    onrestart restart media
+    onrestart restart --only-if-running media.tuner
+    onrestart restart netd
+    onrestart restart wificond
+    task_profiles ProcessCapacityHigh MaxPerformance
+    critical window=${zygote.critical_window.minute:-off} target=zygote-fatal
+```
+
+```txt
+service zygote /system/bin/app_process64 -Xzygote /system/bin --zygote --start-system-server --socket-name=zygote
+```
+
+- `service` 启动一个服务
+- `zygote` 服务名
+
+- `/system/bin/app_process64` 映像
+- `-Xzygote` 指定这是一个zygote进程
+- `/system/bin` Java classpath
+- `--zygote` 传给`app_process`的，最终进入`ZygoteInit.main()`
+- `--start-system-server` 传给`app_process`的，说明要启动SystemServer
+- `--socket-name=zygote`指定socket名，对应下面的`socket zygote`
+
+```txt
+class main
+```
+
+- 优先阶段启动
+
+```txt
+priority -20
+```
+
+- 优先级最高
+
+```txt
+user root
+```
+
+- 指定zygote为root。不然zygote不能fork。
+
+```txt
+socket zygote stream 660 root system
+```
+
+- 定义zygote socket。zygote用它来fork进程。
+
+```txt
+onrestart write /sys/power/wake_lock zygote_kwl
+onrestart restart audioserver
+onrestart restart cameraserver
+onrestart restart media
+onrestart restart --only-if-running media.tuner
+onrestart restart netd
+onrestart restart wificond
+```
+
+- zygote crash后进行的操作
+
+```txt
+task_profiles ProcessCapacityHigh MaxPerformance
+```
+
+- 资源限制
+
+```txt
+critical window=${zygote.critical_window.minute:-off} target=zygote-fatal
+```
+
+- 设定zygote服务关键窗口时间。如果该时间内服务没启动成功，就视为致命错误。
+
+当然，由上面也可以看出来，像`audioserver` `cameraserver` 这类进程，都是`zygote`的子进程。
+
+### 启动app_process进程
+
+::url-card{url="https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/cmds/app_process/app_main.cpp"}
+
+```cpp
+// frameworks/base/cmds/app_process/app_main.cpp
+// ...
+int main(int argc, char* const argv[])
+{
+    // ...
+
+    AppRuntime runtime(argv[0], computeArgBlockSize(argc, argv));
+   	// ...
+
+    // Everything up to '--' or first non '-' arg goes to the vm.
+    //
+    // The first argument after the VM args is the "parent dir", which
+    // is currently unused.
+    //
+    // After the parent dir, we expect one or more the following internal
+    // arguments :
+    //
+    // --zygote : Start in zygote mode
+    // --start-system-server : Start the system server.
+    // --application : Start in application (stand alone, non zygote) mode.
+    // --nice-name : The nice name for this process.
+    //
+    // For non zygote starts, these arguments will be followed by
+    // the main class name. All remaining arguments are passed to
+    // the main method of this class.
+    //
+    // For zygote starts, all remaining arguments are passed to the zygote.
+    // main function.
+    //
+    // Note that we must copy argument string values since we will rewrite the
+    // entire argument block when we apply the nice name to argv0.
+    //
+    // As an exception to the above rule, anything in "spaced commands"
+    // goes to the vm even though it has a space in it.
+   
+ 		// ...
+    // Parse runtime arguments.  Stop at first unrecognized option.
+    bool zygote = false;
+    bool startSystemServer = false;
+    bool application = false;
+    String8 niceName;
+    String8 className;
+
+    ++i;  // Skip unused "parent dir" argument.
+    while (i < argc) {
+        const char* arg = argv[i++];
+        if (strcmp(arg, "--zygote") == 0) {
+            zygote = true;
+            niceName = ZYGOTE_NICE_NAME;
+        } else if (strcmp(arg, "--start-system-server") == 0) {
+            startSystemServer = true;
+        } else if (strcmp(arg, "--application") == 0) {
+            application = true;
+        } else if (strncmp(arg, "--nice-name=", 12) == 0) {
+            niceName = (arg + 12);
+        } else if (strncmp(arg, "--", 2) != 0) {
+            className = arg;
+            break;
+        } else {
+            --i;
+            break;
+        }
+    }
+
+    Vector<String8> args;
+    if (!className.empty()) {
+       // ...
+    } else {
+        // We're in zygote mode.
+        maybeCreateDalvikCache();
+
+        if (startSystemServer) {
+            args.add(String8("start-system-server"));
+        }
+
+        // ...
+        // In zygote mode, pass all remaining arguments to the zygote
+        // main() method.
+        for (; i < argc; ++i) {
+            args.add(String8(argv[i]));
+        }
+    }
+
+    if (!niceName.empty()) {
+        runtime.setArgv0(niceName.c_str(), true /* setProcName */);
+    }
+
+    if (zygote) {
+        runtime.start("com.android.internal.os.ZygoteInit", args, zygote);
+    } else if (!className.empty()) {
+        runtime.start("com.android.internal.os.RuntimeInit", args, zygote);
+    } else {
+        fprintf(stderr, "Error: no class name or --zygote supplied.\n");
+        app_usage();
+        LOG_ALWAYS_FATAL("app_process: no class name or --zygote supplied.");
+    }
+}
+```
+
+所以，这里大部分都在做**参数解析**：
+
+- 如果参数带`--zygote`，就用`ZygoteInit`启动，否则用`RuntimeInit`
+- 该进程剩下的启动参数，透传给`runtime.start(xxx)`
+
+盯着后面的`runtime.start(xxx)`，我们看看`runtime.cpp`
+
+::url-card{url="https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/core/jni/AndroidRuntime.cpp"}
+
+```cpp
+// frameworks/base/core/jni/AndroidRuntime.cpp
+/*
+ * Start the Android runtime.  This involves starting the virtual machine
+ * and calling the "static void main(String[] args)" method in the class
+ * named by "className".
+ *
+ * Passes the main function two arguments, the class name and the specified
+ * options string.
+ */
+void AndroidRuntime::start(const char* className, const Vector<String8>& options, bool zygote)
+{
+    ALOGD(">>>>>> START %s uid %d <<<<<<\n",
+            className != NULL ? className : "(unknown)", getuid());
+
+    static const String8 startSystemServer("start-system-server");
+    // Whether this is the primary zygote, meaning the zygote which will fork system server.
+    bool primary_zygote = false;
+
+    /*
+     * 'startSystemServer == true' means runtime is obsolete and not run from
+     * init.rc anymore, so we print out the boot start event here.
+     */
+    for (size_t i = 0; i < options.size(); ++i) {
+        if (options[i] == startSystemServer) {
+            primary_zygote = true;
+           /* track our progress through the boot sequence */
+           const int LOG_BOOT_PROGRESS_START = 3000;
+           LOG_EVENT_LONG(LOG_BOOT_PROGRESS_START,  ns2ms(systemTime(SYSTEM_TIME_MONOTONIC)));
+        }
+    }
+
+    // ...
+
+    //const char* kernelHack = getenv("LD_ASSUME_KERNEL");
+    //ALOGD("Found LD_ASSUME_KERNEL='%s'\n", kernelHack);
+
+    /* start the virtual machine */
+    JniInvocation jni_invocation;
+    jni_invocation.Init(NULL);
+    JNIEnv* env;
+    if (startVm(&mJavaVM, &env, zygote, primary_zygote) != 0) {
+        return;
+    }
+    onVmCreated(env);
+
+    /*
+     * Register android functions.
+     */
+    if (startReg(env) < 0) {
+        ALOGE("Unable to register all android natives\n");
+        return;
+    }
+
+    /*
+     * We want to call main() with a String array with arguments in it.
+     * At present we have two arguments, the class name and an option string.
+     * Create an array to hold them.
+     */
+    jclass stringClass;
+    jobjectArray strArray;
+    jstring classNameStr;
+
+    stringClass = env->FindClass("java/lang/String");
+    assert(stringClass != NULL);
+    strArray = env->NewObjectArray(options.size() + 1, stringClass, NULL);
+    assert(strArray != NULL);
+    classNameStr = env->NewStringUTF(className);
+    assert(classNameStr != NULL);
+    env->SetObjectArrayElement(strArray, 0, classNameStr);
+
+    for (size_t i = 0; i < options.size(); ++i) {
+        jstring optionsStr = env->NewStringUTF(options.itemAt(i).c_str());
+        assert(optionsStr != NULL);
+        env->SetObjectArrayElement(strArray, i + 1, optionsStr);
+    }
+
+    /*
+     * Start VM.  This thread becomes the main thread of the VM, and will
+     * not return until the VM exits.
+     */
+    char* slashClassName = toSlashClassName(className != NULL ? className : "");
+    jclass startClass = env->FindClass(slashClassName);
+    if (startClass == NULL) {
+        ALOGE("JavaVM unable to locate class '%s'\n", slashClassName);
+        /* keep going */
+    } else {
+        jmethodID startMeth = env->GetStaticMethodID(startClass, "main",
+            "([Ljava/lang/String;)V");
+        if (startMeth == NULL) {
+            ALOGE("JavaVM unable to find main() in '%s'\n", className);
+            /* keep going */
+        } else {
+            env->CallStaticVoidMethod(startClass, startMeth, strArray);
+
+#if 0
+            if (env->ExceptionCheck())
+                threadExitUncaughtException(env);
+#endif
+        }
+    }
+    free(slashClassName);
+
+    ALOGD("Shutting down VM\n");
+    if (mJavaVM->DetachCurrentThread() != JNI_OK)
+        ALOGW("Warning: unable to detach main thread\n");
+    if (mJavaVM->DestroyJavaVM() != 0)
+        ALOGW("Warning: VM did not shut down cleanly\n");
+}
+```
+
+作用：
+
+1. 初始化`libart.so` （`jni_invocation.Init(NULL);`）
+2. 初始化ART虚拟机（`startVm(&mJavaVM, &env, zygote, primary_zygote)`）
+3. 通过反射找到传入classpath的main函数并执行
+
+而`JniInvocation` 到底做了什么呢？
+
+::url-card{url="https://cs.android.com/android/platform/superproject/main/+/main:libnativehelper/include_platform/nativehelper/JniInvocation.h"}
+
+::url-card{url="https://cs.android.com/android/platform/superproject/main/+/main:libnativehelper/JniInvocation.c"}
+
+```cpp
+// libnativehelper/JniInvocation.c
+
+// ...
+
+// Name the default library providing the JNI Invocation API.
+static const char* kDefaultJniInvocationLibrary = "libart.so";
+static const char* kDebugJniInvocationLibrary = "libartd.so";
+
+// ...
+bool JniInvocationInit(struct JniInvocationImpl* instance, const char* library_name) {
+#ifdef __ANDROID__
+  char buffer[PROP_VALUE_MAX];
+#else
+  char* buffer = NULL;
+#endif
+  library_name = JniInvocationGetLibrary(library_name, buffer);
+  DlLibrary library = DlOpenLibrary(library_name);
+  if (library == NULL) {
+    if (strcmp(library_name, kDefaultJniInvocationLibrary) == 0) {
+      // Nothing else to try.
+      ALOGE("Failed to dlopen %s: %s", library_name, DlGetError());
+      return false;
+    }
+    // Note that this is enough to get something like the zygote
+    // running, we can't property_set here to fix this for the future
+    // because we are root and not the system user. See
+    // RuntimeInit.commonInit for where we fix up the property to
+    // avoid future fallbacks. http://b/11463182
+    ALOGW("Falling back from %s to %s after dlopen error: %s",
+          library_name, kDefaultJniInvocationLibrary, DlGetError());
+    library_name = kDefaultJniInvocationLibrary;
+    library = DlOpenLibrary(library_name);
+    if (library == NULL) {
+      ALOGE("Failed to dlopen %s: %s", library_name, DlGetError());
+      return false;
+    }
+  }
+
+  DlSymbol JNI_GetDefaultJavaVMInitArgs_ = FindSymbol(library, "JNI_GetDefaultJavaVMInitArgs");
+  if (JNI_GetDefaultJavaVMInitArgs_ == NULL) {
+    return false;
+  }
+
+  DlSymbol JNI_CreateJavaVM_ = FindSymbol(library, "JNI_CreateJavaVM");
+  if (JNI_CreateJavaVM_ == NULL) {
+    return false;
+  }
+
+  DlSymbol JNI_GetCreatedJavaVMs_ = FindSymbol(library, "JNI_GetCreatedJavaVMs");
+  if (JNI_GetCreatedJavaVMs_ == NULL) {
+    return false;
+  }
+
+  instance->jni_provider_library_name = library_name;
+  instance->jni_provider_library = library;
+  instance->JNI_GetDefaultJavaVMInitArgs = (jint (*)(void *)) JNI_GetDefaultJavaVMInitArgs_;
+  instance->JNI_CreateJavaVM = (jint (*)(JavaVM**, JNIEnv**, void*)) JNI_CreateJavaVM_;
+  instance->JNI_GetCreatedJavaVMs = (jint (*)(JavaVM**, jsize, jsize*)) JNI_GetCreatedJavaVMs_;
+
+  return true;
+}
+```
+
+通过`dlopen`载入`libart.so`。
+
+### 小结
+
+```mermaid
+flowchart LR
+  A["Init 启动"] --> B["解析 init.rc / 启动 Zygote 服务"]
+  B --> C["启动 app_process (Zygote 进程)"]
+  C --> D["初始化运行时 (ART)"]
+  D --> E["进入 com.android.internal.os.ZygoteInit.main"]
+```
+
+## SystemServer进程
+
+没想到吧！前面看了这么多的`ZygoteInit`，到这里实际是为了初始化`SystemServer`。
+
+前情提要一下，实际上`ZygoteInit`的`main`函数里，`args`里带着一个`start-system-server`。
+
+### ZygoteInit#main
+
+我们直接看`main`方法
 
 ::url-card{url="https://cs.android.com/android/platform/superproject/+/master:frameworks/base/core/java/com/android/internal/os/ZygoteInit.java"}
 
 ```java
 // ZygoteInit.java
 /**
- * Startup class for the zygote process.
- *
- * Pre-initializes some classes, and then waits for commands on a UNIX domain socket. Based on these
- * commands, forks off child processes that inherit the initial state of the VM.
- *
- * Please see {@link ZygoteArguments} for documentation on the client protocol.
- *
- * @hide
- */
-public class ZygoteInit {
-  ...
+     * This is the entry point for a Zygote process.  It creates the Zygote server, loads resources,
+     * and handles other tasks related to preparing the process for forking into applications.
+     *
+     * This process is started with a nice value of -20 (highest priority).  All paths that flow
+     * into new processes are required to either set the priority to the default value or terminate
+     * before executing any non-system code.  The native side of this occurs in SpecializeCommon,
+     * while the Java Language priority is changed in ZygoteInit.handleSystemServerProcess,
+     * ZygoteConnection.handleChildProc, and Zygote.childMain.
+     *
+     * @param argv  Command line arguments used to specify the Zygote's configuration.
+     */
     @UnsupportedAppUsage
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
         ZygoteServer zygoteServer = null;
 
-        // Mark zygote start. This ensures that thread creation will throw
-        // an error.
-        ZygoteHooks.startZygoteNoThreadCreation();
-
-        // Zygote goes into its own process group.
+        // ...
+        Runnable caller;
         try {
-            Os.setpgid(0, 0);
-        } catch (ErrnoException ex) {
-            throw new RuntimeException("Failed to setpgid(0,0)", ex);
-        }
-    ...
-      if (startSystemServer) {
+            // Store now for StatsLogging later.
+            final long startTime = SystemClock.elapsedRealtime();
+            final boolean isRuntimeRestarted = "1".equals(
+                    SystemProperties.get("sys.boot_completed"));
+
+            String bootTimeTag = Process.is64Bit() ? "Zygote64Timing" : "Zygote32Timing";
+            TimingsTraceLog bootTimingsTraceLog = new TimingsTraceLog(bootTimeTag,
+                    Trace.TRACE_TAG_DALVIK);
+            bootTimingsTraceLog.traceBegin("ZygoteInit");
+            RuntimeInit.preForkInit();
+
+            boolean startSystemServer = false;
+            String zygoteSocketName = "zygote";
+            String abiList = null;
+            boolean enableLazyPreload = false;
+            for (int i = 1; i < argv.length; i++) {
+                if ("start-system-server".equals(argv[i])) {
+                    startSystemServer = true;
+                } else if ("--enable-lazy-preload".equals(argv[i])) {
+                    enableLazyPreload = true;
+                } else if (argv[i].startsWith(ABI_LIST_ARG)) {
+                    abiList = argv[i].substring(ABI_LIST_ARG.length());
+                } else if (argv[i].startsWith(SOCKET_NAME_ARG)) {
+                    zygoteSocketName = argv[i].substring(SOCKET_NAME_ARG.length());
+                } else {
+                    throw new RuntimeException("Unknown command line argument: " + argv[i]);
+                }
+            }
+
+          	// ...
+
+            zygoteServer = new ZygoteServer(isPrimaryZygote);
+
+            if (startSystemServer) {
                 Runnable r = forkSystemServer(abiList, zygoteSocketName, zygoteServer);
 
                 // {@code r == null} in the parent (zygote) process, and {@code r != null} in the
@@ -123,10 +688,33 @@ public class ZygoteInit {
                     return;
                 }
             }
-    ...
+
+            Log.i(TAG, "Accepting command socket connections");
+
+            // The select loop returns early in the child process after a fork and
+            // loops forever in the zygote.
+            caller = zygoteServer.runSelectLoop(abiList);
+        } catch (Throwable ex) {
+            Log.e(TAG, "System zygote died with fatal exception", ex);
+            throw ex;
+        } finally {
+            if (zygoteServer != null) {
+                zygoteServer.closeServerSocket();
+            }
+        }
+
+        // We're in the child process and have exited the select loop. Proceed to execute the
+        // command.
+        if (caller != null) {
+            caller.run();
+        }
+    }
 ```
 
-随后，Zygote准备fork `system_server`，详细逻辑位于`forkSystemServer`。`forkSystemServer`返回了一个钩子，实际是SystemServer的main方法。我们接着来看：
+1. 解析参数。重点，如果有`start-system-server`，就会走到`forkSystemServer`阶段；
+2. 否则，调用`zygoteServer.runSelectLoop`。这里其实是开启APP进程后会调用，后续会讲到。
+
+随后，Zygote准备fork `system_server`，详细逻辑位于`forkSystemServer`。
 
 ```java
 // ZygoteInit.java
@@ -138,31 +726,7 @@ public class ZygoteInit {
      */
     private static Runnable forkSystemServer(String abiList, String socketName,
             ZygoteServer zygoteServer) {
-        long capabilities = posixCapabilitiesAsBits(
-                OsConstants.CAP_IPC_LOCK,
-                OsConstants.CAP_KILL,
-                OsConstants.CAP_NET_ADMIN,
-                OsConstants.CAP_NET_BIND_SERVICE,
-                OsConstants.CAP_NET_BROADCAST,
-                OsConstants.CAP_NET_RAW,
-                OsConstants.CAP_SYS_MODULE,
-                OsConstants.CAP_SYS_NICE,
-                OsConstants.CAP_SYS_PTRACE,
-                OsConstants.CAP_SYS_TIME,
-                OsConstants.CAP_SYS_TTY_CONFIG,
-                OsConstants.CAP_WAKE_ALARM,
-                OsConstants.CAP_BLOCK_SUSPEND
-        );
-        /* Containers run without some capabilities, so drop any caps that are not available. */
-        StructCapUserHeader header = new StructCapUserHeader(
-                OsConstants._LINUX_CAPABILITY_VERSION_3, 0);
-        StructCapUserData[] data;
-        try {
-            data = Os.capget(header);
-        } catch (ErrnoException ex) {
-            throw new RuntimeException("Failed to capget()", ex);
-        }
-        capabilities &= ((long) data[0].effective) | (((long) data[1].effective) << 32);
+        // ...
 
         /* Hardcoded command line to start the system server */
         String args[] = {
@@ -181,23 +745,7 @@ public class ZygoteInit {
         int pid;
 
         try {
-            parsedArgs = new ZygoteArguments(args);
-            Zygote.applyDebuggerSystemProperty(parsedArgs);
-            Zygote.applyInvokeWithSystemProperty(parsedArgs);
-
-            if (Zygote.nativeSupportsMemoryTagging()) {
-                /* The system server is more privileged than regular app processes, so it has async
-                 * tag checks enabled on hardware that supports memory tagging. */
-                parsedArgs.mRuntimeFlags |= Zygote.MEMORY_TAG_LEVEL_ASYNC;
-            } else if (Zygote.nativeSupportsTaggedPointers()) {
-                /* Enable pointer tagging in the system server. Hardware support for this is present
-                 * in all ARMv8 CPUs. */
-                parsedArgs.mRuntimeFlags |= Zygote.MEMORY_TAG_LEVEL_TBI;
-            }
-
-            if (shouldProfileSystemServer()) {
-                parsedArgs.mRuntimeFlags |= Zygote.PROFILE_SYSTEM_SERVER;
-            }
+            // ...
 
             /* Request to fork the system server process */
             pid = Zygote.forkSystemServer(
@@ -225,7 +773,19 @@ public class ZygoteInit {
     }
 ```
 
-这里有两点注意，`forkSystemServer`是调用native侧fork一个进程出来。并且，注意下这里的`args`，特别是`com.android.server.SystemServer`，后面要考。
+先看主要逻辑：
+
+- 准备一堆参数，注意最后一个参数`"com.android.server.SystemServer"`没有带`--`，后面要考。
+- 调用`Zygote.forkSystemServer` fork进程。
+- 根据父子进程区分：
+  - 父进程（zygote）：返回`null`，回到`main`方法里，实际走到`zygoteServer.runSelectLoop`。`zygoteServer.runSelectLoop`是一个循环队列，自旋获取事件，后面会讲到。
+  - 子进程：
+    1. 等待`secondaryZygote`
+    2. 调用`handleSystemServerProcess`
+
+### SystemServer进程的创建
+
+再来看`Zygote.forkSystemServer`：
 
 ```java
 // Zygote.java
@@ -266,9 +826,119 @@ public class ZygoteInit {
         ZygoteHooks.postForkCommon();
         return pid;
     }
+
+		// ...
+		private static native int nativeForkSystemServer(int uid, int gid, int[] gids, int runtimeFlags,
+            int[][] rlimits, long permittedCapabilities, long effectiveCapabilities);
 ```
 
-随后，会走到`handleSystemServerProcess`
+`nativeForkSystemServer`是个native函数，其实写在`com_android_internal_os_Zygote.cpp`里。
+
+注册：
+
+```cpp
+// com_android_internal_os_Zygote.cpp
+static const JNINativeMethod gMethods[] = {
+  // ...
+  {"nativeForkSystemServer", "(II[II[[IJJ)I",
+         (void*)com_android_internal_os_Zygote_nativeForkSystemServer},
+  // ...
+}
+```
+
+实现：
+
+```cpp
+NO_STACK_PROTECTOR
+static jint com_android_internal_os_Zygote_nativeForkSystemServer(
+        JNIEnv* env, jclass, uid_t uid, gid_t gid, jintArray gids,
+        jint runtime_flags, jobjectArray rlimits, jlong permitted_capabilities,
+        jlong effective_capabilities) {
+  // ...
+  pid_t pid = zygote::ForkCommon(env, true,
+                                 fds_to_close,
+                                 fds_to_ignore,
+                                 true);
+  if (pid == 0) {
+      // System server prcoess does not need data isolation so no need to
+      // know pkg_data_info_list.
+      SpecializeCommon(env, uid, gid, gids, runtime_flags, rlimits, permitted_capabilities,
+                       effective_capabilities, 0, MOUNT_EXTERNAL_DEFAULT, nullptr, nullptr, true,
+                       false, nullptr, nullptr, /* is_top_app= */ false,
+                       /* pkg_data_info_list */ nullptr,
+                       /* allowlisted_data_info_list */ nullptr, false, false, false);
+  } else if (pid > 0) {
+      // The zygote process checks whether the child process has died or not.
+      ALOGI("System server process %d has been created", pid);
+      gSystemServerPid = pid;
+      // There is a slight window that the system server process has crashed
+      // but it went unnoticed because we haven't published its pid yet. So
+      // we recheck here just to make sure that all is well.
+      int status;
+      if (waitpid(pid, &status, WNOHANG) == pid) {
+          ALOGE("System server process %d has died. Restarting Zygote!", pid);
+          RuntimeAbort(env, __LINE__, "System server process has died. Restarting Zygote!");
+      }
+
+      if (UsePerAppMemcg()) {
+          // Assign system_server to the correct memory cgroup.
+          // Not all devices mount memcg so check if it is mounted first
+          // to avoid unnecessarily printing errors and denials in the logs.
+          if (!SetTaskProfiles(pid, std::vector<std::string>{"SystemMemoryProcess"})) {
+              ALOGE("couldn't add process %d into system memcg group", pid);
+          }
+      }
+  }
+  return pid;
+}
+```
+
+而`zygote::ForkCommon`对应：
+
+```cpp
+// com_android_internal_os_Zygote.cpp
+// Utility routine to fork a process from the zygote.
+NO_STACK_PROTECTOR
+pid_t zygote::ForkCommon(JNIEnv* env, bool is_system_server,
+                         const std::vector<int>& fds_to_close,
+                         const std::vector<int>& fds_to_ignore,
+                         bool is_priority_fork,
+                         bool purge) {
+  // ...
+  auto fail_fn = std::bind(zygote::ZygoteFailure, env,
+                           is_system_server ? "system_server" : "zygote",
+                           nullptr, _1);
+  // ...
+  pid_t pid = fork();
+
+  if (pid == 0) {
+    if (is_priority_fork) {
+      setpriority(PRIO_PROCESS, 0, PROCESS_PRIORITY_MAX);
+    } else {
+      setpriority(PRIO_PROCESS, 0, PROCESS_PRIORITY_MIN);
+    }
+
+		// ...
+  } else if (pid == -1) {
+    ALOGE("Failed to fork child process: %s (%d)", strerror(errno), errno);
+  } else {
+    ALOGD("Forked child process %d", pid);
+  }
+
+  // ...
+
+  return pid;
+}
+
+```
+
+在这里面调用系统的`fork`。
+
+而上面的`SpecializeCommon`，其实是对新建的子进程授权，这里不再贴代码讲述。
+
+---
+
+让我们回到Java代码。进程创建后，对于SystemServer进程，会走到`handleSystemServerProcess`
 
 ```java
 // ZygoteInit.java
@@ -296,7 +966,7 @@ private static Runnable handleSystemServerProcess(ZygoteArguments parsedArgs) {
     }
 ```
 
-最后走到`ZygoteInit.zygoteInit`，结束`ZygoteInit`有关逻辑。
+最后走到`ZygoteInit.zygoteInit`。
 
 ```java
 // ZygoteInit.java
@@ -316,26 +986,17 @@ private static Runnable handleSystemServerProcess(ZygoteArguments parsedArgs) {
      */
     public static final Runnable zygoteInit(int targetSdkVersion, long[] disabledCompatChanges,
             String[] argv, ClassLoader classLoader) {
-        if (RuntimeInit.DEBUG) {
-            Slog.d(RuntimeInit.TAG, "RuntimeInit: Starting application from zygote");
-        }
-
-        Trace.traceBegin(Trace.TRACE_TAG_ACTIVITY_MANAGER, "ZygoteInit");
-        RuntimeInit.redirectLogStreams();
-
-        RuntimeInit.commonInit();
-        ZygoteInit.nativeZygoteInit();
+        // ...
         return RuntimeInit.applicationInit(targetSdkVersion, disabledCompatChanges, argv,
                 classLoader);
     }
 ```
 
-这里有两点：
+实际是调用`RuntimeInit.applicationInit`
 
-- `ZygoteInit.nativeZygoteInit()`
-- `RuntimeInit.applicationInit`
+### RuntimeInit#applicationInit
 
-`RuntimeInit.applicationInit`的作用，是查找`main`方法并返回。
+`RuntimeInit.applicationInit`的作用，是查找`main`方法并返回。这个函数后面还会用到。
 
 ```java
 // RuntimeInit.java
@@ -347,15 +1008,8 @@ private static Runnable handleSystemServerProcess(ZygoteArguments parsedArgs) {
         // shutdown an Android application gracefully.  Among other things, the
         // Android runtime shutdown hooks close the Binder driver, which can cause
         // leftover running threads to crash before the process actually exits.
-        nativeSetExitWithoutCleanup(true);
-
-        VMRuntime.getRuntime().setTargetSdkVersion(targetSdkVersion);
-        VMRuntime.getRuntime().setDisabledCompatChanges(disabledCompatChanges);
-
-        final Arguments args = new Arguments(argv);
-
-        // The end of of the RuntimeInit event (see #zygoteInit).
-        Trace.traceEnd(Trace.TRACE_TAG_ACTIVITY_MANAGER);
+        
+  			// ...
 
         // Remaining arguments are passed to the start class's static main
         return findStaticMain(args.startClass, args.startArgs, classLoader);
@@ -406,6 +1060,30 @@ private static Runnable handleSystemServerProcess(ZygoteArguments parsedArgs) {
          * up the process.
          */
         return new MethodAndArgsCaller(m, argv);
+    }
+
+		// ...
+		/**
+     * Helper class which holds a method and arguments and can call them. This is used as part of
+     * a trampoline to get rid of the initial process setup stack frames.
+     */
+    static class MethodAndArgsCaller implements Runnable {
+        /** method to call */
+        private final Method mMethod;
+
+        /** argument array */
+        private final String[] mArgs;
+
+        public MethodAndArgsCaller(Method method, String[] args) {
+            mMethod = method;
+            mArgs = args;
+        }
+
+        public void run() {
+          // ...
+            mMethod.invoke(null, new Object[] { mArgs });
+          // ...
+        }
     }
 ...
 ```
@@ -482,13 +1160,13 @@ String args[] = {
         };
 ```
 
-因此，解析到的`className`是`com.android.server.SystemServer`。换句话说，这些阶段可以保证，`ZygoteInit`最终能拿到`SystemServer`的`main`钩子并执行。
+所以，`className`在这里能解析到`com.android.server.SystemServer`。然后我们再回到`ZygoteInit`，`main`方法拿到的`caller`，其实就是`SystemServer`的`main`方法。因此，子进程从这里开始执行`SystemServer`的有关逻辑。
 
-### SystemServer初始化
+### SystemServer进程初始化
 
 ::url-card{url="https://cs.android.com/android/platform/superproject/+/master:frameworks/base/services/java/com/android/server/SystemServer.java"}
 
-接着，逻辑来到了`SystemServer`内部：
+现在，我们目光终于可以聚焦到`SystemServer`子进程了。逻辑来到了`SystemServer`内部：
 
 ```java
 // SystemServer.java
@@ -499,17 +1177,7 @@ String args[] = {
         new SystemServer().run();
     }
 
-```
-
-`run`里的逻辑非常复杂。总的来说，分为几类：
-
-- 初始化系统参数，比如语言、时间
-- 初始化其他的服务进程
-- 初始化服务
-
-```java
-// SystemServer.java
-private void run() {
+		private void run() {
   ...
     // Start services.
         try {
@@ -526,10 +1194,16 @@ private void run() {
             t.traceEnd(); // StartServices
         }
   ...
-    
+
 ```
 
-`startBootstrapServices` `startCoreServices` `startOtherServices` `startApexServices` 这四个的逻辑太繁琐了😭，好在我们的目的是**找到Launcher启动的地方**，其实就是在`startOtherServices` 里：
+`run`里的逻辑非常复杂。总的来说，分为几类：
+
+- 初始化系统参数，比如语言、时间
+- 初始化其他的服务进程
+- 初始化服务
+
+`startBootstrapServices`/ `startCoreServices`/ `startOtherServices`/ `startApexServices` 这四个的逻辑太繁琐了😭。好在我们的目的是**找到Launcher启动的地方**，其实就藏在`startOtherServices` 里：
 
 ```java
 // SystemServer.java
@@ -541,15 +1215,8 @@ private void run() {
       // WM初始化，后面要考
       wm = WindowManagerService.main(context, inputManager, !mFirstBoot, mOnlyCore,
                     new PhoneWindowManager(), mActivityManagerService.mActivityTaskManager);
-            ServiceManager.addService(Context.WINDOW_SERVICE, wm, /* allowIsolated= */ false,
-                    DUMP_FLAG_PRIORITY_CRITICAL | DUMP_FLAG_PROTO);
-            ServiceManager.addService(Context.INPUT_SERVICE, inputManager,
-                    /* allowIsolated= */ false, DUMP_FLAG_PRIORITY_CRITICAL);
-            t.traceEnd();
-
-            t.traceBegin("SetWindowManagerService");
-            mActivityManagerService.setWindowManager(wm);
-            t.traceEnd();
+       
+      // ...
       
       // 关键点来啦：
       // We now tell the activity manager it is okay to run third party
@@ -563,7 +1230,12 @@ private void run() {
       ...
 ```
 
-`mActivityManagerService` 是怎么来的？在`startBootstrapServices`就会初始化：
+当然，我这里先mark下几点：
+
+- `WindowManagerService` - `WindowManagerService`也是在这里做的初始化，是Android的窗口调度中心。Android里的界面显示、Window层级、动画、多窗口等都由它来控制。也成为WMS。
+- `mActivityManagerService` - 大名鼎鼎的`ActivityManagerService`，或称`AMS`，负责应用生命周期、进程管理和任务栈调度的核心系统服务。
+
+`mActivityManagerService` 是怎么初始化的？在`startBootstrapServices`就会初始化：
 
 ```java
 // SystemServer.java
@@ -580,13 +1252,11 @@ private void run() {
                 ...
 ```
 
-这里的`mActivityManagerService`，就是大名鼎鼎的`ActivityManagerService`，或称`AMS`。
-
-### ActivityManagerService
+### AMS和ATMS
 
 ::url-card{url="https://cs.android.com/android/platform/superproject/+/master:frameworks/base/services/core/java/com/android/server/am/ActivityManagerService.java"}
 
-回顾一下，`SystemServer`其实对`AMS`做了很多事情，但在本文中关键的是：
+回顾一下，`SystemServer`其实对`AMS`做了很多初始化的操作。在本文中关键的是：
 
 - `setWindowManager`
 - `systemReady`
@@ -609,7 +1279,7 @@ public void systemReady(final Runnable goingCallback, TimingsTraceLog traceLog) 
 }
 ```
 
-`mAtmInternal` `mActivityTaskManager`在`AMS`初始化时就创建：
+`mAtmInternal`/ `mActivityTaskManager`在`AMS`初始化时就创建：
 
 ```java
 // ActivityManagerService.java
@@ -624,9 +1294,7 @@ public ActivityManagerService(Context systemContext, ActivityTaskManagerService 
 
 这两个`ActivityTaskManagerService`有什么区别？一个是binder远程调用，另一个是本地调用。本地调用因为不需跨进程，性能相对更有优势。
 
-但是，这里有个问题，`AMS`和`ATMS`都在同一个进程里，`AMS`全用`mAtmInternal`访问不就好了？为什么还需要多一个`mActivityTaskManager`呢？
-
-因为，先前版本是不存在`ActivityTaskManagerService`的，`AMS`负责现在`ATMS`的所有功能。
+但是，`AMS`和`ATMS`都在同一个进程里，`AMS`里全用`mAtmInternal`访问不就好了？为什么还需要多一个`mActivityTaskManager`呢？这是因为，先前版本是不存在`ActivityTaskManagerService`的，老版本下的`AMS`负责现在`ATMS`的所有功能。
 
 新版本Android对`AMS`做了解耦：
 
@@ -635,9 +1303,7 @@ public ActivityManagerService(Context systemContext, ActivityTaskManagerService 
 
 但是`AMS`也需要负责`ATMS`的接口转发，因此需要多存一份binder。
 
-`AMS`向`ATMS`传入`WindowManagerService`。并且，`AMS`调用`ATMS`的`startHomeOnAllDisplays`。
-
-### ActivityTaskManagerInternal
+在`systemReady`被调用时，`AMS`和`ATMS`的`WMS`都已初始化完成。接着，会调用`mAtmInternal.startHomeOnAllDisplays`，准备展示桌面。
 
 ```java
 // ActivityTaskManagerInternal.java
@@ -646,7 +1312,7 @@ public void setWindowManager(WindowManagerService wm) {
         synchronized (mGlobalLock) {
             mWindowManager = wm;
             mRootWindowContainer = wm.mRoot;
-          ...
+          // ...
         }
 
 @Override
@@ -657,7 +1323,9 @@ public void setWindowManager(WindowManagerService wm) {
         }
 ```
 
-首先，`mRootWindowContainer`是什么？这个是`WindowManagerService`里取的，可以理解为是根View：
+这里的`startHomeOnAllDisplays`实际调用的事`mRootWindowContainer.startHomeOnAllDisplays`。`mRootWindowContainer`实际上是`WMS`的`mRoot`。
+
+`WMS`的`mRoot`是什么？
 
 ```java
 // WindowManagerService.java
@@ -671,11 +1339,7 @@ private WindowManagerService(Context context, InputManagerService inputManager,
   ...
 ```
 
-这里调用了`RootWindowContainer`拉起首页。
-
-### RootWindowContainer
-
-推测：`startHomeOnAllDisplays`的作用是用于分屏
+这个`RootWindowContainer`又是什么？其实，这个是Android内**所有显示和窗口层级的根**。`startHomeOnAllDisplays`的作用，是在所有可用的Display（可理解成屏幕）上启动桌面。
 
 ```java
 // RootWindowContainer.java
@@ -812,33 +1476,118 @@ boolean startHomeOnDisplay(int userId, String reason, int displayId) {
     }
 ```
 
-前提：
+这里以单显示器为例子，做了：
 
-- `mService`是什么？
+1. resolve home activity拿到intent
+2. 校验能否启动
+3. 构造intent
+4. 设置intent参数（比如`FLAG_ACTIVITY_NEW_TASK`）
+5. 调用`mService.getActivityStartController().startHomeActivity`拉起Activity。
+
+有几个问题：
+
+1. `mService`是什么？
+
+   ```java
+   // RootWindowContainer.java
+   ...
+      RootWindowContainer(WindowManagerService service) {
+           super(service);
+           mHandler = new MyHandler(service.mH.getLooper());
+           mService = service.mAtmService;
+           mTaskSupervisor = mService.mTaskSupervisor;
+           mTaskSupervisor.mRootWindowContainer = this;
+           mDisplayOffTokenAcquirer = mService.new SleepTokenAcquirerImpl(DISPLAY_OFF_SLEEP_TOKEN_TAG);
+       }
+   ...
+   ```
+
+   其实就是外面传入的`ATMS`。
+
+2. `ATMS`怎么拿到home intent的？
+
+   ```java
+   // ActivityTaskManagerService.java
+    Intent getHomeIntent() {
+           Intent intent = new Intent(mTopAction, mTopData != null ? Uri.parse(mTopData) : null);
+           intent.setComponent(mTopComponent);
+           intent.addFlags(Intent.FLAG_DEBUG_TRIAGED_MISSING);
+           if (mFactoryTest != FactoryTest.FACTORY_TEST_LOW_LEVEL) {
+               intent.addCategory(Intent.CATEGORY_HOME);
+           }
+           return intent;
+       }
+   ```
+
+   注意这里添加了Category——`Intent.CATEGORY_HOME`，和Launcer3的`AndroidManifest.xml`声明一致。
+
+
+home intent里并没有Activity信息啊，怎么定位到是Launcher3的？
+
+关键代码：
 
 ```java
-// RootWindowContainer.java
-...
-   RootWindowContainer(WindowManagerService service) {
-        super(service);
-        mHandler = new MyHandler(service.mH.getLooper());
-        mService = service.mAtmService;
-        mTaskSupervisor = mService.mTaskSupervisor;
-        mTaskSupervisor.mRootWindowContainer = this;
-        mDisplayOffTokenAcquirer = mService.new SleepTokenAcquirerImpl(DISPLAY_OFF_SLEEP_TOKEN_TAG);
-    }
-...
+AppGlobals.getPackageManager().resolveIntent(homeIntent, resolvedType, flags, userId)
 ```
 
-其实是外面传进来的`ATMS`
+这里简单来说，`SystemServer`是通过IBinder跨进程调用的`PackageManager#resolveIntent`。
 
-这里做了（针对于单屏的情况，也就是`taskDisplayArea == getDefaultTaskDisplayArea()`的情形）：
+接着，会走到`ResolveIntentHelper`。注意，这里的`Computer`是**查询缓存**。
 
-1. 从`ATMS`获取Launcher的Intent。
+```java
+// ResolveIntentHelper.java
+/**
+     * Normally instant apps can only be resolved when they're visible to the caller.
+     * However, if {@code resolveForStart} is {@code true}, all instant apps are visible
+     * since we need to allow the system to start any installed application.
+     */
+    public ResolveInfo resolveIntentInternal(Computer computer, Intent intent, String resolvedType,
+            @PackageManager.ResolveInfoFlagsBits long flags,
+            @PackageManagerInternal.PrivateResolveFlags long privateResolveFlags, int userId,
+            boolean resolveForStart, int filterCallingUid, int callingPid) {
+        try {
+          // ...
+            final List<ResolveInfo> query = computer.queryIntentActivitiesInternal(intent,
+                    resolvedType, flags, privateResolveFlags, filterCallingUid, callingPid,
+                    userId, resolveForStart, /*allowDynamicSplits*/ true);
+            Trace.traceEnd(TRACE_TAG_PACKAGE_MANAGER);
 
-2. 在Intent里解析Activity信息（对应`resolveHomeActivity`）。
-3. 往Intent里塞一些参数。
-4. 调用`mService.getActivityStartController().startHomeActivity`拉起Launcher。
+            // ...
+
+            final boolean queryMayBeFiltered =
+                    UserHandle.getAppId(filterCallingUid) >= Process.FIRST_APPLICATION_UID
+                            && !resolveForStart;
+
+            final ResolveInfo bestChoice = chooseBestActivity(computer, intent, resolvedType, flags,
+                    privateResolveFlags, query, userId, queryMayBeFiltered);
+            final boolean nonBrowserOnly =
+                    (privateResolveFlags & PackageManagerInternal.RESOLVE_NON_BROWSER_ONLY) != 0;
+            if (nonBrowserOnly && bestChoice != null && bestChoice.handleAllWebDataURI) {
+                return null;
+            }
+            return bestChoice;
+        } finally {
+            Trace.traceEnd(TRACE_TAG_PACKAGE_MANAGER);
+        }
+    }
+```
+
+`Computer`的实现逻辑在`ComputerEngine`里：
+
+```java
+// ComputerEngine.java
+public final @NonNull List<ResolveInfo> queryIntentActivitiesInternal(
+            Intent intent, String resolvedType, @PackageManager.ResolveInfoFlagsBits long flags,
+            @PackageManagerInternal.PrivateResolveFlags long privateResolveFlags,
+            int filterCallingUid, int callingPid, int userId, boolean resolveForStart,
+            boolean allowDynamicSplits) {
+  ...
+}
+```
+
+最终，会从`IntentResolver`里，筛选出最合适的Intent。
+
+---
 
 `ActivityStartController`是什么呢？其实是在`ATMS`里初始化的：
 
@@ -852,43 +1601,19 @@ public void initialize(IntentFirewall intentFirewall, PendingIntentController in
 }
 ```
 
-### ActivityStartController
+这里调用了`ASC`拉起Activity。后续，我们将看该类的实现。
+
+### ActivityStartController(ASC) & Activity Starter(AS)
 
 ::url-card{url="https://cs.android.com/android/platform/superproject/+/android-latest-release:frameworks/base/services/core/java/com/android/server/wm/ActivityStartController.java;l=75?q=ActivityStartController&sq=&ss=android%2Fplatform%2Fsuperproject"}
+
+调用`startHomeActivity`拉起Activity
 
 ```java
 // ActivityStartController.java
 void startHomeActivity(Intent intent, ActivityInfo aInfo, String reason,
             TaskDisplayArea taskDisplayArea) {
-        if (mHomeLaunchingTaskDisplayAreas.contains(taskDisplayArea)) {
-            Slog.e(TAG, "Abort starting home on " + taskDisplayArea + " recursively.");
-            return;
-        }
-
-        final ActivityOptions options = ActivityOptions.makeBasic();
-        options.setLaunchWindowingMode(WINDOWING_MODE_FULLSCREEN);
-        if (!ActivityRecord.isResolverActivity(aInfo.name)) {
-            // The resolver activity shouldn't be put in root home task because when the
-            // foreground is standard type activity, the resolver activity should be put on the
-            // top of current foreground instead of bring root home task to front.
-            options.setLaunchActivityType(ACTIVITY_TYPE_HOME);
-        }
-        final int displayId = taskDisplayArea.getDisplayId();
-        options.setLaunchDisplayId(displayId);
-        options.setLaunchTaskDisplayArea(taskDisplayArea.mRemoteToken
-                .toWindowContainerToken());
-
-        // The home activity will be started later, defer resuming to avoid unnecessary operations
-        // (e.g. start home recursively) when creating root home task.
-        mSupervisor.beginDeferResume();
-        final Task rootHomeTask;
-        try {
-            // Make sure root home task exists on display area.
-            rootHomeTask = taskDisplayArea.getOrCreateRootHomeTask(ON_TOP);
-        } finally {
-            mSupervisor.endDeferResume();
-        }
-
+        // ...
         try {
             mHomeLaunchingTaskDisplayAreas.add(taskDisplayArea);
             mLastHomeActivityStartResult = obtainStarter(intent, "startHomeActivity: " + reason)
@@ -901,22 +1626,11 @@ void startHomeActivity(Intent intent, ActivityInfo aInfo, String reason,
         } finally {
             mHomeLaunchingTaskDisplayAreas.remove(taskDisplayArea);
         }
-        mLastHomeActivityStartRecord = tmpOutRecord[0];
-        if (rootHomeTask.mInResumeTopActivity) {
-            // If we are in resume section already, home activity will be initialized, but not
-            // resumed (to avoid recursive resume) and will stay that way until something pokes it
-            // again. We need to schedule another resume.
-            mSupervisor.scheduleResumeTopActivities();
-        }
+        // ...
     }
 ```
 
-1. 放置递归启动Activity
-2. 创建启动参数
-3. 全屏启动Activity，因为是Launcher
-4. 延迟resume，Andorid优化之一
-
-接着，看`obtainStarter`
+核心点在`obtainStarter`:
 
 ```java
 // ActivityStartController.java
@@ -930,7 +1644,7 @@ void startHomeActivity(Intent intent, ActivityInfo aInfo, String reason,
     }
 ```
 
-`mFactory`是什么？
+`mFactory`是什么？其实，是`AS`的工厂类：
 
 ```java
 // ActivityStartController.java
@@ -999,9 +1713,7 @@ void startHomeActivity(Intent intent, ActivityInfo aInfo, String reason,
     }
 ```
 
-所以，`ActivityStartController#obtain`实际是创建一个`ActivityStarter`。
-
-### ActivityStarter
+`ActivityStartController#obtain`实际是创建一个`ActivityStarter`。
 
 ActivityStart是一个builder，我们直接看`.execute()`:
 
@@ -1016,97 +1728,15 @@ ActivityStart是一个builder，我们直接看`.execute()`:
      */
     int execute() {
         try {
-            onExecutionStarted();
-
-            // Refuse possible leaked file descriptors
-            if (mRequest.intent != null && mRequest.intent.hasFileDescriptors()) {
-                throw new IllegalArgumentException("File descriptors passed in Intent");
-            }
-
-            final LaunchingState launchingState;
-            synchronized (mService.mGlobalLock) {
-                final ActivityRecord caller = ActivityRecord.forTokenLocked(mRequest.resultTo);
-                final int callingUid = mRequest.realCallingUid == Request.DEFAULT_REAL_CALLING_UID
-                        ?  Binder.getCallingUid() : mRequest.realCallingUid;
-                launchingState = mSupervisor.getActivityMetricsLogger().notifyActivityLaunching(
-                        mRequest.intent, caller, callingUid);
-            }
-
-            // If the caller hasn't already resolved the activity, we're willing
-            // to do so here. If the caller is already holding the WM lock here,
-            // and we need to check dynamic Uri permissions, then we're forced
-            // to assume those permissions are denied to avoid deadlocking.
-            if (mRequest.activityInfo == null) {
-                mRequest.resolveActivity(mSupervisor);
-            }
-
-            // Add checkpoint for this shutdown or reboot attempt, so we can record the original
-            // intent action and package name.
-            if (mRequest.intent != null) {
-                String intentAction = mRequest.intent.getAction();
-                String callingPackage = mRequest.callingPackage;
-                if (intentAction != null && callingPackage != null
-                        && (Intent.ACTION_REQUEST_SHUTDOWN.equals(intentAction)
-                                || Intent.ACTION_SHUTDOWN.equals(intentAction)
-                                || Intent.ACTION_REBOOT.equals(intentAction))) {
-                    ShutdownCheckPoints.recordCheckPoint(intentAction, callingPackage, null);
-                }
-            }
+            // ...
 
             int res;
             synchronized (mService.mGlobalLock) {
-                final boolean globalConfigWillChange = mRequest.globalConfig != null
-                        && mService.getGlobalConfiguration().diff(mRequest.globalConfig) != 0;
-                final Task rootTask = mRootWindowContainer.getTopDisplayFocusedRootTask();
-                if (rootTask != null) {
-                    rootTask.mConfigWillChange = globalConfigWillChange;
-                }
-                ProtoLog.v(WM_DEBUG_CONFIGURATION, "Starting activity when config "
-                        + "will change = %b", globalConfigWillChange);
+                // ...
 
-                final long origId = Binder.clearCallingIdentity();
-
-                res = resolveToHeavyWeightSwitcherIfNeeded();
-                if (res != START_SUCCESS) {
-                    return res;
-                }
                 res = executeRequest(mRequest);
 
-                Binder.restoreCallingIdentity(origId);
-
-                if (globalConfigWillChange) {
-                    // If the caller also wants to switch to a new configuration, do so now.
-                    // This allows a clean switch, as we are waiting for the current activity
-                    // to pause (so we will not destroy it), and have not yet started the
-                    // next activity.
-                    mService.mAmInternal.enforceCallingPermission(
-                            android.Manifest.permission.CHANGE_CONFIGURATION,
-                            "updateConfiguration()");
-                    if (rootTask != null) {
-                        rootTask.mConfigWillChange = false;
-                    }
-                    ProtoLog.v(WM_DEBUG_CONFIGURATION,
-                                "Updating to new configuration after starting activity.");
-
-                    mService.updateConfigurationLocked(mRequest.globalConfig, null, false);
-                }
-
-                // The original options may have additional info about metrics. The mOptions is not
-                // used here because it may be cleared in setTargetRootTaskIfNeeded.
-                final ActivityOptions originalOptions = mRequest.activityOptions != null
-                        ? mRequest.activityOptions.getOriginalOptions() : null;
-                // If the new record is the one that started, a new activity has created.
-                final boolean newActivityCreated = mStartActivity == mLastStartActivityRecord;
-                // Notify ActivityMetricsLogger that the activity has launched.
-                // ActivityMetricsLogger will then wait for the windows to be drawn and populate
-                // WaitResult.
-                mSupervisor.getActivityMetricsLogger().notifyActivityLaunched(launchingState, res,
-                        newActivityCreated, mLastStartActivityRecord, originalOptions);
-                if (mRequest.waitResult != null) {
-                    mRequest.waitResult.result = res;
-                    res = waitResultIfNeeded(mRequest.waitResult, mLastStartActivityRecord,
-                            launchingState);
-                }
+                // ...
                 return getExternalResult(res);
             }
         } finally {
@@ -1115,14 +1745,6 @@ ActivityStart是一个builder，我们直接看`.execute()`:
     }
 
 ```
-
-关键点：
-
-1. `onExecutionStarted` 初始化启动状态
-2. 检查Intent FD
-3. Activity启动性能追踪
-4. 找到支持该Intent的Activity
-5. 加锁，启动Activity——`executeRequest`
 
 `executeRequest`在干嘛？
 
@@ -1135,12 +1757,36 @@ ActivityStart是一个builder，我们直接看`.execute()`:
      * go through {@link #startActivityUnchecked} to {@link #startActivityInner}.
      */
     private int executeRequest(Request request) {
-      ...
+      // ...
+         final ActivityRecord r = new ActivityRecord.Builder(mService)
+                .setCaller(callerApp)
+                .setLaunchedFromPid(callingPid)
+                .setLaunchedFromUid(callingUid)
+                .setLaunchedFromPackage(callingPackage)
+                .setLaunchedFromFeature(callingFeatureId)
+                .setIntent(intent)
+                .setResolvedType(resolvedType)
+                .setActivityInfo(aInfo)
+                .setConfiguration(mService.getGlobalConfiguration())
+                .setResultTo(resultRecord)
+                .setResultWho(resultWho)
+                .setRequestCode(requestCode)
+                .setComponentSpecified(request.componentSpecified)
+                .setRootVoiceInteraction(voiceSession != null)
+                .setActivityOptions(checkedOptions)
+                .setSourceRecord(sourceRecord)
+                .build();
+      // ...
          mLastStartActivityResult = startActivityUnchecked(r, sourceRecord, voiceSession,
                 request.voiceInteractor, startFlags, true /* doResume */, checkedOptions,
                 inTask, inTaskFragment, balCode, intentGrants);
-      ...
+      // ...
 ```
+
+这里做了：
+
+1. 创建`ActivityRecord`，是`SystemServer`对Activity的管理；
+2. 调用`startActivityUnchecked`拉起APP进程。
 
 `startActivityUnchecked`在干嘛？
 
@@ -1210,21 +1856,7 @@ ActivityStart是一个builder，我们直接看`.execute()`:
             int startFlags, boolean doResume, ActivityOptions options, Task inTask,
             TaskFragment inTaskFragment, @BalCode int balCode,
             NeededUriGrants intentGrants) {
-        setInitialState(r, options, inTask, inTaskFragment, doResume, startFlags, sourceRecord,
-                voiceSession, voiceInteractor, balCode);
-
-        computeLaunchingTaskFlags();
-        mIntent.setFlags(mLaunchFlags);
-
-        boolean dreamStopping = false;
-
-        for (ActivityRecord stoppingActivity : mSupervisor.mStoppingActivities) {
-            if (stoppingActivity.getActivityType()
-                    == WindowConfiguration.ACTIVITY_TYPE_DREAM) {
-                dreamStopping = true;
-                break;
-            }
-        }
+        // ...
 
         // Get top task at beginning because the order may be changed when reusing existing task.
         final Task prevTopRootTask = mPreferredTaskDisplayArea.getFocusedRootTask();
@@ -1385,11 +2017,9 @@ ActivityStart是一个builder，我们直接看`.execute()`:
 
 如注释所示，该方法主要作用是决定Activity在Task/RootTask/Display的位置，并决定启动策略。比如如果Activity设定为`singleTop`，那么会在这个阶段进行判断。如果存在Activity，就不会继续新建。
 
-最后，调用`resumeFocusedTasksTopActivities`，开始触发`Activity`生命周期。
+最后，调用`mRootWindowContainer.resumeFocusedTasksTopActivities`，开始触发`Activity`生命周期。
 
-### RootWindowContainer - 2
-
-接着回到`RootWindowContainer`
+接着回到`RootWindowContainer`：
 
 ```java
 // RootWindowContainer.java
@@ -1556,13 +2186,17 @@ final boolean resumeTopActivity(ActivityRecord prev, ActivityOptions options,
 这里做了：
 
 1. 如果process存在，直接resume
-2. 不存在，调用`mTaskSupervisor.startSpecificActivity(next, true, false)`
+2. 不存在，调用`mTaskSupervisor.startSpecificActivity`
 
-### ActivityTaskSupervisor
+### APP进程的创建
+
+ActivityTaskSupervisor 是 Activity 启动/调度流程中的核心 orchestrator。我们直接看`startSpecificActivity`：
 
 ```java
 // ActivityTaskSupervisor.java
+// ...
 final ActivityTaskManagerService mService;
+// ...
 void startSpecificActivity(ActivityRecord r, boolean andResume, boolean checkConfig) {
         // Is this activity's application already running?
         ...
@@ -1574,7 +2208,7 @@ void startSpecificActivity(ActivityRecord r, boolean andResume, boolean checkCon
     }
 ```
 
-所以，实际是调用`ATMS`初始化进程。我们再回到`ATMS`里：
+所以，实际是调用`ATMS`的`startSpecificActivity`初始化进程（转了一圈，我们又回来了？）。我们再回到`ATMS`里：
 
 ```java
 // ActivityTaskManagerService.java
@@ -1593,7 +2227,7 @@ void startProcessAsync(ActivityRecord activity, boolean knownToBeDead, boolean i
     }
 ```
 
-这里往looper发了个消息。我们回到处理消息的逻辑里，实际是`AMS`处理的：
+这里往looper发了个消息。找到处理消息的逻辑里，实际是`AMS`处理的：
 
 ```java
 // ActivityManagerService.java
@@ -1636,7 +2270,7 @@ void startProcessAsync(ActivityRecord activity, boolean knownToBeDead, boolean i
     }
 ```
 
-接着，走到`ProcessList`开启APP进程：
+接着，来到`ProcessList`开启APP进程：
 
 ```java
 // ProcessList.java
@@ -1859,8 +2493,6 @@ private Process.ProcessStartResult startProcess(HostingRecord hostingRecord, Str
 ```
 
 `Process`实际通过`ZygoteProcess`创建APP进程。接着，来欣赏下`ZygoteProcess`的代码：
-
-### ZygoteProcess
 
 ::url-card{url="https://cs.android.com/android/platform/superproject/+/android-latest-release:frameworks/base/core/java/android/os/ZygoteProcess.java;l=73;bpv=1;bpt=0?q=ZygoteProcess&sq=&ss=android%2Fplatform%2Fsuperproject"}
 
@@ -2115,77 +2747,150 @@ private Process.ProcessStartResult startProcess(HostingRecord hostingRecord, Str
     }
 ```
 
-`ZygoteState`是什么？是java与native侧通信的socket工具类。`attemptZygoteSendArgsAndGetResult`负责把消息写入socket流里，并读取流里的pid返回。
+`ZygoteState`是什么？是java与zygote(native)侧通信的socket工具类。`attemptZygoteSendArgsAndGetResult`负责把参数写入socket流里，并读取流里的pid返回。
 
-至此，APP进程已经创建完成。接着，就要进入APP启动主线，也就是Launcher启动。
+至此，APP进程已经创建完成。在APP进程的创建过程，SystemServer已经完成了它的任务。接下来，我们把焦点放在APP进程本身。
 
-## Launcher的创建与启动
+## Launcher Activity进程初始化
 
-进程fork后发生了什么？注意，我们刚刚的所有过程，都发生在`system_server`进程里。现在我们的APP进程已经创建完成了。
+子进程fork后，代码应该从哪开始执行？我们回想下：
 
-### 子进程初始化
+1. 子进程是谁fork的？——zygote进程
+2. zygote fork的时候在干嘛？——在跑`caller = zygoteServer.runSelectLoop(abiList)`：
 
-我们回到APP进程上，看看会发生什么。首先，我们再回首一下`ZygoteInit`的代码：
-
-```java
-// ZygoteInit.java
-...
-  public static void main(String[] argv) {
-  ...
-    // 还记得这个吗
-    if (startSystemServer) {
-                Runnable r = forkSystemServer(abiList, zygoteSocketName, zygoteServer);
-
-                // {@code r == null} in the parent (zygote) process, and {@code r != null} in the
-                // child (system_server) process.
-                if (r != null) {
-                    r.run();
-                    return;
-                }
-            }
-
-            Log.i(TAG, "Accepting command socket connections");
-
-            // The select loop returns early in the child process after a fork and
-            // loops forever in the zygote.
-            caller = zygoteServer.runSelectLoop(abiList);
-  } catch (Throwable ex) {
-            Log.e(TAG, "System zygote died with fatal exception", ex);
-            throw ex;
-        } finally {
-            if (zygoteServer != null) {
-                zygoteServer.closeServerSocket();
-            }
-        }
-
-        // We're in the child process and have exited the select loop. Proceed to execute the
-        // command.
-        if (caller != null) {
-            caller.run();
-        }
-```
-
-我们刚刚已经看过这部分代码。这里与刚才的区别在于，这次我们进程不是`system_server`，因此会去`zygoteServer.runSelectLoop`抓一个hook回来，然后调用。
-
-调用栈如下：
-
-```
-ZygoteServer.runSelectLoop()
-        ↓
-ZygoteConnection.processCommand()
-        ↓
-Zygote.forkAndSpecialize()
-        ↓ JNI
-nativeForkAndSpecialize()
-        ↓
-fork()
-```
+### ZygoteServer#runSelectLoop
 
 ```java
 // ZygoteServer.java
- Runnable runSelectLoop(String abiList) {
-   ...
-                          try {
+ /**
+     * Runs the zygote process's select loop. Accepts new connections as
+     * they happen, and reads commands from connections one spawn-request's
+     * worth at a time.
+     * @param abiList list of ABIs supported by this zygote.
+     */
+    Runnable runSelectLoop(String abiList) {
+        ArrayList<FileDescriptor> socketFDs = new ArrayList<>();
+        ArrayList<ZygoteConnection> peers = new ArrayList<>();
+
+        socketFDs.add(mZygoteSocket.getFileDescriptor());
+        peers.add(null);
+
+        mUsapPoolRefillTriggerTimestamp = INVALID_TIMESTAMP;
+
+        while (true) {
+            fetchUsapPoolPolicyPropsWithMinInterval();
+            mUsapPoolRefillAction = UsapPoolRefillAction.NONE;
+
+            int[] usapPipeFDs = null;
+            StructPollfd[] pollFDs;
+
+            // Allocate enough space for the poll structs, taking into account
+            // the state of the USAP pool for this Zygote (could be a
+            // regular Zygote, a WebView Zygote, or an AppZygote).
+            if (mUsapPoolEnabled) {
+                usapPipeFDs = Zygote.getUsapPipeFDs();
+                pollFDs = new StructPollfd[socketFDs.size() + 1 + usapPipeFDs.length];
+            } else {
+                pollFDs = new StructPollfd[socketFDs.size()];
+            }
+
+            /*
+             * For reasons of correctness the USAP pool pipe and event FDs
+             * must be processed before the session and server sockets.  This
+             * is to ensure that the USAP pool accounting information is
+             * accurate when handling other requests like API deny list
+             * exemptions.
+             */
+
+            int pollIndex = 0;
+            for (FileDescriptor socketFD : socketFDs) {
+                pollFDs[pollIndex] = new StructPollfd();
+                pollFDs[pollIndex].fd = socketFD;
+                pollFDs[pollIndex].events = (short) POLLIN;
+                ++pollIndex;
+            }
+
+            final int usapPoolEventFDIndex = pollIndex;
+
+            if (mUsapPoolEnabled) {
+                pollFDs[pollIndex] = new StructPollfd();
+                pollFDs[pollIndex].fd = mUsapPoolEventFD;
+                pollFDs[pollIndex].events = (short) POLLIN;
+                ++pollIndex;
+
+                // The usapPipeFDs array will always be filled in if the USAP Pool is enabled.
+                assert usapPipeFDs != null;
+                for (int usapPipeFD : usapPipeFDs) {
+                    FileDescriptor managedFd = new FileDescriptor();
+                    managedFd.setInt$(usapPipeFD);
+
+                    pollFDs[pollIndex] = new StructPollfd();
+                    pollFDs[pollIndex].fd = managedFd;
+                    pollFDs[pollIndex].events = (short) POLLIN;
+                    ++pollIndex;
+                }
+            }
+
+            int pollTimeoutMs;
+
+            if (mUsapPoolRefillTriggerTimestamp == INVALID_TIMESTAMP) {
+                pollTimeoutMs = -1;
+            } else {
+                long elapsedTimeMs = System.currentTimeMillis() - mUsapPoolRefillTriggerTimestamp;
+
+                if (elapsedTimeMs >= mUsapPoolRefillDelayMs) {
+                    // The refill delay has elapsed during the period between poll invocations.
+                    // We will now check for any currently ready file descriptors before refilling
+                    // the USAP pool.
+                    pollTimeoutMs = 0;
+                    mUsapPoolRefillTriggerTimestamp = INVALID_TIMESTAMP;
+                    mUsapPoolRefillAction = UsapPoolRefillAction.DELAYED;
+
+                } else if (elapsedTimeMs <= 0) {
+                    // This can occur if the clock used by currentTimeMillis is reset, which is
+                    // possible because it is not guaranteed to be monotonic.  Because we can't tell
+                    // how far back the clock was set the best way to recover is to simply re-start
+                    // the respawn delay countdown.
+                    pollTimeoutMs = mUsapPoolRefillDelayMs;
+
+                } else {
+                    pollTimeoutMs = (int) (mUsapPoolRefillDelayMs - elapsedTimeMs);
+                }
+            }
+
+            int pollReturnValue;
+            try {
+                pollReturnValue = Os.poll(pollFDs, pollTimeoutMs);
+            } catch (ErrnoException ex) {
+                throw new RuntimeException("poll failed", ex);
+            }
+
+            if (pollReturnValue == 0) {
+                // The poll returned zero results either when the timeout value has been exceeded
+                // or when a non-blocking poll is issued and no FDs are ready.  In either case it
+                // is time to refill the pool.  This will result in a duplicate assignment when
+                // the non-blocking poll returns zero results, but it avoids an additional
+                // conditional in the else branch.
+                mUsapPoolRefillTriggerTimestamp = INVALID_TIMESTAMP;
+                mUsapPoolRefillAction = UsapPoolRefillAction.DELAYED;
+
+            } else {
+                boolean usapPoolFDRead = false;
+
+                while (--pollIndex >= 0) {
+                    if ((pollFDs[pollIndex].revents & POLLIN) == 0) {
+                        continue;
+                    }
+
+                    if (pollIndex == 0) {
+                        // Zygote server socket
+                        ZygoteConnection newPeer = acceptCommandPeer(abiList);
+                        peers.add(newPeer);
+                        socketFDs.add(newPeer.getFileDescriptor());
+                    } else if (pollIndex < usapPoolEventFDIndex) {
+                        // Session socket accepted from the Zygote server socket
+
+                        try {
                             ZygoteConnection connection = peers.get(pollIndex);
                             boolean multipleForksOK = !isUsapPoolEnabled()
                                     && ZygoteHooks.isIndefiniteThreadSuspensionSafe();
@@ -2201,8 +2906,140 @@ fork()
                                 }
 
                                 return command;
-                              ...
+                            } else {
+                                // We're in the server - we should never have any commands to run.
+                                if (command != null) {
+                                    throw new IllegalStateException("command != null");
+                                }
+
+                                // We don't know whether the remote side of the socket was closed or
+                                // not until we attempt to read from it from processCommand. This
+                                // shows up as a regular POLLIN event in our regular processing
+                                // loop.
+                                if (connection.isClosedByPeer()) {
+                                    connection.closeSocket();
+                                    peers.remove(pollIndex);
+                                    socketFDs.remove(pollIndex);
+                                }
+                            }
+                        } catch (Exception e) {
+                            if (!mIsForkChild) {
+                                // We're in the server so any exception here is one that has taken
+                                // place pre-fork while processing commands or reading / writing
+                                // from the control socket. Make a loud noise about any such
+                                // exceptions so that we know exactly what failed and why.
+
+                                Slog.e(TAG, "Exception executing zygote command: ", e);
+
+                                // Make sure the socket is closed so that the other end knows
+                                // immediately that something has gone wrong and doesn't time out
+                                // waiting for a response.
+                                ZygoteConnection conn = peers.remove(pollIndex);
+                                conn.closeSocket();
+
+                                socketFDs.remove(pollIndex);
+                            } else {
+                                // We're in the child so any exception caught here has happened post
+                                // fork and before we execute ActivityThread.main (or any other
+                                // main() method). Log the details of the exception and bring down
+                                // the process.
+                                Log.e(TAG, "Caught post-fork exception in child process.", e);
+                                throw e;
+                            }
+                        } finally {
+                            // Reset the child flag, in the event that the child process is a child-
+                            // zygote. The flag will not be consulted this loop pass after the
+                            // Runnable is returned.
+                            mIsForkChild = false;
+                        }
+
+                    } else {
+                        // Either the USAP pool event FD or a USAP reporting pipe.
+
+                        // If this is the event FD the payload will be the number of USAPs removed.
+                        // If this is a reporting pipe FD the payload will be the PID of the USAP
+                        // that was just specialized.  The `continue` statements below ensure that
+                        // the messagePayload will always be valid if we complete the try block
+                        // without an exception.
+                        long messagePayload;
+
+                        try {
+                            byte[] buffer = new byte[Zygote.USAP_MANAGEMENT_MESSAGE_BYTES];
+                            int readBytes =
+                                    Os.read(pollFDs[pollIndex].fd, buffer, 0, buffer.length);
+
+                            if (readBytes == Zygote.USAP_MANAGEMENT_MESSAGE_BYTES) {
+                                DataInputStream inputStream =
+                                        new DataInputStream(new ByteArrayInputStream(buffer));
+
+                                messagePayload = inputStream.readLong();
+                            } else {
+                                Log.e(TAG, "Incomplete read from USAP management FD of size "
+                                        + readBytes);
+                                continue;
+                            }
+                        } catch (Exception ex) {
+                            if (pollIndex == usapPoolEventFDIndex) {
+                                Log.e(TAG, "Failed to read from USAP pool event FD: "
+                                        + ex.getMessage());
+                            } else {
+                                Log.e(TAG, "Failed to read from USAP reporting pipe: "
+                                        + ex.getMessage());
+                            }
+
+                            continue;
+                        }
+
+                        if (pollIndex > usapPoolEventFDIndex) {
+                            Zygote.removeUsapTableEntry((int) messagePayload);
+                        }
+
+                        usapPoolFDRead = true;
+                    }
+                }
+
+                if (usapPoolFDRead) {
+                    int usapPoolCount = Zygote.getUsapPoolCount();
+
+                    if (usapPoolCount < mUsapPoolSizeMin) {
+                        // Immediate refill
+                        mUsapPoolRefillAction = UsapPoolRefillAction.IMMEDIATE;
+                    } else if (mUsapPoolSizeMax - usapPoolCount >= mUsapPoolRefillThreshold) {
+                        // Delayed refill
+                        mUsapPoolRefillTriggerTimestamp = System.currentTimeMillis();
+                    }
+                }
+            }
+
+            if (mUsapPoolRefillAction != UsapPoolRefillAction.NONE) {
+                int[] sessionSocketRawFDs =
+                        socketFDs.subList(1, socketFDs.size())
+                                .stream()
+                                .mapToInt(FileDescriptor::getInt$)
+                                .toArray();
+
+                final boolean isPriorityRefill =
+                        mUsapPoolRefillAction == UsapPoolRefillAction.IMMEDIATE;
+
+                final Runnable command =
+                        fillUsapPool(sessionSocketRawFDs, isPriorityRefill);
+
+                if (command != null) {
+                    return command;
+                } else if (isPriorityRefill) {
+                    // Schedule a delayed refill to finish refilling the pool.
+                    mUsapPoolRefillTriggerTimestamp = System.currentTimeMillis();
+                }
+            }
+        }
+    }
 ```
+
+`runSelectLoop`是什么？其实就是一个自旋操作，在不断接受消息。在接到消息后，会调用`ZygoteConnection.processCommand`。
+
+而fork子进程后，子进程也应该在这个`runSelectLoop`，然后调用`ZygoteConnection.processCommand`。接着，如果这个方法返回了一个runnable，那么子进程就会直接执行，退出自旋的过程。
+
+`processCommand`发生了什么呢？
 
 ```java
 // ZygoteConnection.java
@@ -2266,19 +3103,9 @@ APP属于子进程，因此`pid`为0，接着会走进`handleChildProc`
          */
 
         closeSocket();
-
-        Zygote.setAppProcessName(parsedArgs, TAG);
-
-        // End of the postFork event.
-        Trace.traceEnd(Trace.TRACE_TAG_ACTIVITY_MANAGER);
+      // ...
         if (parsedArgs.mInvokeWith != null) {
-            WrapperInit.execApplication(parsedArgs.mInvokeWith,
-                    parsedArgs.mNiceName, parsedArgs.mTargetSdkVersion,
-                    VMRuntime.getCurrentInstructionSet(),
-                    pipeFd, parsedArgs.mRemainingArgs);
-
-            // Should not get here.
-            throw new IllegalStateException("WrapperInit.execApplication unexpectedly returned");
+           // ...
         } else {
             if (!isZygote) {
                 return ZygoteInit.zygoteInit(parsedArgs.mTargetSdkVersion,
@@ -2314,7 +3141,7 @@ APP属于子进程，因此`pid`为0，接着会走进`handleChildProc`
     }
 ```
 
-很简单，直接调用`RuntimeInit.applicationInit`。`RuntimeInit.applicationInit`我们刚刚已经看过了，就是取entrypoint的static main方法并返回。我们刚刚已经mark过，这里的entryPoint是`android.app.ActivityThread`。因此，这里会直接启动`ActivityThread`的main方法。
+注意，这里是APP进程的`ZygoteInit`，直接调用`RuntimeInit.applicationInit`。`RuntimeInit.applicationInit`我们刚刚已经看过了，就是取entrypoint的static main方法并返回，这里会直接启动`ActivityThread`的main方法。
 
 ### ActivityThread
 
