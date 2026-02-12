@@ -1,5 +1,6 @@
 ---
 title: Kotlin Native编译原理03 - 简单「深入」理解Objective-C运行时（二）
+id: kotlin-native-bian-yi-yuan-li-03-jian-dan-shen-ru-li-jie-objective-c-yun-xing-shi-er
 published: 2026-02-10 13:17:00
 description: ''
 image: ./img/1_iDQ77Lohz3F3tx2Fml1msg.png

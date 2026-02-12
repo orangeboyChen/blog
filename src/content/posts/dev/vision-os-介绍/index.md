@@ -2,7 +2,7 @@
 title: Vision OS 介绍
 published: 2023-09-27 15:29:57
 tags: []
-id: '508'
+id: vision-os-jie-shao
 image: ./img/企业微信20230927-152922@2x-2.png
 category: 开发
 ---

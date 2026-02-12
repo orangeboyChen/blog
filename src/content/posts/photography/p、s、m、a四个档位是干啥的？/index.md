@@ -2,7 +2,7 @@
 title: P、S、M、A四个档位是干啥的？
 published: 2020-06-24 23:11:25
 tags: []
-id: '301'
+id: p-s-m-a-si-ge-dang-wei-shi-gan-sha-de
 category: 摄影
 image: ./img/4-12.jpg
 ---

@@ -2,7 +2,7 @@
 title: Go初探 (3) – 基础语句
 published: 2020-10-30 15:44:12
 tags: [Go]
-id: '448'
+id: go-chu-tan-3-ji-chu-yu-ju
 category: 开发
 ---
 

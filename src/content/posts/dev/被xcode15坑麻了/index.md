@@ -2,7 +2,7 @@
 title: 被Xcode15坑麻了
 published: 2023-09-28 01:38:51
 tags: [iOS]
-id: '612'
+id: bei-xcode15-keng-ma-le
 image: ./img/WX20230928-014116@2x.png
 category: 开发
 ---

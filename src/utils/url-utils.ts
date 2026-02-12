@@ -1,3 +1,4 @@
+import type { InferEntrySchema } from "astro:content";
 import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 
@@ -12,8 +13,12 @@ function joinUrl(...parts: string[]): string {
 	return joined.replace(/\/+/g, "/");
 }
 
-export function getPostUrlBySlug(slug: string): string {
-	return url(`/posts/${slug}/`);
+export function getPostUrlByEntry(entry: InferEntrySchema<"posts">): string {
+	return url(`/posts/${entry.id}/`);
+}
+
+export function getPostUrlById(id: string): string {
+	return url(`/posts/${id}/`);
 }
 
 export function getTagUrl(tag: string): string {

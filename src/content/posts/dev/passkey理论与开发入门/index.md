@@ -2,7 +2,7 @@
 title: Passkey理论与开发入门
 published: 2024-12-30 15:52:36
 tags: [Passkey]
-id: '670'
+id: passkey-li-lun-yu-kai-fa-ru-men
 image: ./img/passkey.jpeg
 category: 开发
 ---
@@ -683,7 +683,7 @@ ASAuthorizationPlatformPublicKeyCredentialAssertion
 
 ### Android实现
 
-::url-card{url="https://developer.android.com/identity/sign-in/credential-manager"}
+::url-card{url="https://developer.android.com/identity/sign-in/credential-manager?hl=en"}
 
 Android与Passkey的操作都需用到Credential Manager
 

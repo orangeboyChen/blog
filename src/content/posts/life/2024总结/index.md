@@ -2,7 +2,7 @@
 title: 2024年度总结
 published: 2024-12-31 03:02:09
 tags: [年度总结]
-id: '678'
+id: 2024-nian-du-zong-jie
 category: 生活
 image: ./img/Textutred-Dark-Wallpaper-background.jpg
 ---

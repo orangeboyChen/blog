@@ -2,7 +2,7 @@
 title: 让NAS的WebDAV完美支持HTTPS
 published: 2023-12-31 20:38:01
 tags: [NAS]
-id: '628'
+id: rang-nas-de-webdav-wan-mei-zhi-chi-https
 image: ./img/WX20231231-203530@2x-1.png
 category: 开发
 ---

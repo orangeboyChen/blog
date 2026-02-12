@@ -2,7 +2,7 @@
 title: Go初探 (4) – 数组与指针
 published: 2020-11-06 14:32:56
 tags: [Go]
-id: '453'
+id: go-chu-tan-4-shu-zu-yu-zhi-zhen
 category: 开发
 ---
 

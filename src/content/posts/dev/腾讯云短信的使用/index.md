@@ -2,7 +2,7 @@
 title: 腾讯云短信的使用
 published: 2020-10-22 16:12:13
 tags: []
-id: '390'
+id: teng-xun-yun-duan-xin-de-shi-yong
 image: ./img/timg.jpg
 category: 开发
 ---
