@@ -2,7 +2,7 @@
 title: Kotlin Native编译原理02 - 简单「深入」理解Objective-C运行时（一）
 published: 2025-05-29 23:00:02
 tags: [Kotlin, iOS]
-id: kotlin-native-bian-yi-yuan-li-02-jian-dan-shen-ru-li-jie-objective-c-yun-xing-shi-yi
+id: kotlin-native-compiler-02-objective-c-runtime-1
 category: 开发
 image: ./img/1_iDQ77Lohz3F3tx2Fml1msg.png
 ---

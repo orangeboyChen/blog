@@ -1,6 +1,6 @@
 ---
 title: 再见WordPress
-id: zai-jian-wordpress
+id: goodbye-wordpress
 published: 2026-02-10 02:30:00
 description: ''
 image: ./img/image.png

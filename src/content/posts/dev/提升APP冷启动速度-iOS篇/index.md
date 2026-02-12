@@ -1,6 +1,6 @@
 ---
 title: 提升APP冷启动速度-iOS篇
-id: ti-sheng-app-leng-qi-dong-su-du-ios-pian
+id: speed-up-app-cold-start-ios
 published: 2026-02-10 22:07:00
 description: 最近Ham的冷启动速度真的是越来越慢了，慢到令人发指。从手指点击APP Icon到首个页面出现，居然需要3.5秒，是时候要好好优化下了！
 image: ./img/header.png

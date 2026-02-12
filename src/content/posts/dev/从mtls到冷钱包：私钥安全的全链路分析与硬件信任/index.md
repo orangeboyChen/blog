@@ -2,7 +2,7 @@
 title: 从 mTLS 到冷钱包：私钥安全的全链路分析与硬件信任边界
 published: 2025-10-30 15:56:02
 tags: [mTLS, 区块链]
-id: cong-mtls-dao-leng-qian-bao-si-yao-an-quan-de-quan-lian-lu-fen-xi-yu-ying-jian-xin-ren-bian-jie
+id: mtls-to-cold-wallet-key-security-and-hardware-trust
 image: ./img/0a5375760d9173073f7c663d0b4fc141.jpg
 category: 开发
 ---

@@ -2,7 +2,7 @@
 title: Kotlin Native编译原理01 - 符号与链接
 published: 2025-05-12 18:57:50
 tags: [Kotlin, iOS]
-id: kotlin-native-bian-yi-yuan-li-01-fu-hao-yu-lian-jie
+id: kotlin-native-compiler-01-symbols-and-linking
 category: 开发
 image: ./img/1_iDQ77Lohz3F3tx2Fml1msg.png
 ---

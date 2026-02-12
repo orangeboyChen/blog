@@ -2,7 +2,7 @@
 title: Passkey理论与开发入门
 published: 2024-12-30 15:52:36
 tags: [Passkey]
-id: passkey-li-lun-yu-kai-fa-ru-men
+id: passkey-theory-and-development-intro
 image: ./img/passkey.jpeg
 category: 开发
 ---

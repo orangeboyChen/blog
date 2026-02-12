@@ -2,7 +2,7 @@
 title: 测光：感受光之美
 published: 2020-06-28 14:37:04
 tags: []
-id: ce-guang-gan-shou-guang-zhi-mei
+id: metering-the-beauty-of-light
 category: 摄影
 ---
 

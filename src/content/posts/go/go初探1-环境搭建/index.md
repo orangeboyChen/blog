@@ -2,7 +2,7 @@
 title: Go初探 (1) - 环境搭建
 published: 2020-10-23 14:55:40
 tags: [Go]
-id: go-chu-tan-1-huan-jing-da-jian
+id: go-intro-1-setup
 category: 开发
 ---
 

@@ -2,7 +2,7 @@
 title: 从零开始入门的摄影小白
 published: 2020-06-24 02:24:21
 tags: []
-id: cong-ling-kai-shi-ru-men-de-she-ying-xiao-bai
+id: photography-beginners-guide
 category: 摄影
 image: ./img/2-13.jpg
 ---

@@ -2,7 +2,7 @@
 title: Go初探 (5) – 结构体与接口
 published: 2020-11-13 14:43:55
 tags: [Go]
-id: go-chu-tan-5-jie-gou-ti-yu-jie-kou
+id: go-intro-5-structs-and-interfaces
 category: 开发
 ---
 

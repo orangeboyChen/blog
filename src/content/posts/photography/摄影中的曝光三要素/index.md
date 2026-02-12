@@ -2,7 +2,7 @@
 title: 摄影中的曝光三要素
 published: 2020-06-24 12:31:04
 tags: []
-id: she-ying-zhong-de-bao-guang-san-yao-su
+id: exposure-triangle-in-photography
 category: 摄影
 image: ./img/2-12.jpg
 ---
