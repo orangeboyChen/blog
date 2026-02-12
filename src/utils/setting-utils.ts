@@ -49,6 +49,15 @@ export function applyThemeToDocument(theme: LIGHT_DARK_MODE) {
 		"data-theme",
 		expressiveCodeConfig.theme,
 	);
+
+	const mediaMap = {
+		[AUTO_MODE]: "(prefers-color-scheme: dark)",
+		[DARK_MODE]: "all",
+		[LIGHT_MODE]: "none",
+	} satisfies Record<string, string>;
+	document.querySelectorAll('[id^="mermaid-dark"]').forEach((el) => {
+		el.setAttribute("media", mediaMap[theme]);
+	});
 }
 
 export function setTheme(theme: LIGHT_DARK_MODE): void {
