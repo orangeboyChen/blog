@@ -6,9 +6,10 @@ description: 最近Ham的冷启动速度真的是越来越慢了，慢到令人�
 image: ''
 tags: [Android, 冷启动优化]
 category: 开发
+draft: true
 ---
 
-> 本篇是Android篇，关于iOS优化的部分在[《提升APP冷启动速度-iOS篇》](/posts/dev/提升app冷启动速度-ios篇/)
+> 本篇是Android篇，关于iOS优化的部分在[《提升APP冷启动速度-iOS篇》](/posts/ios/提升app冷启动速度-ios篇/)
 
 最近Ham的冷启动速度真的是越来越慢了，慢到令人发指。从手指点击APP Icon到首个页面出现，居然需要3.5秒，是时候要好好优化下了！
 
@@ -27,26 +28,6 @@ category: 开发
 ::url-card{url="https://cs.android.com/android/platform/superproject/+/master:packages/apps/Launcher3/src/com/android/launcher3/"}
 
 ### Launcher3
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
