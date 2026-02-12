@@ -221,7 +221,7 @@ import {
 	// SizeObserverPlugin,
 	// ClickScrollPlugin
 } from 'overlayscrollbars';
-import {getHue, getStoredTheme, setHue, setTheme} from "../utils/setting-utils";
+import {applyMermaidDarkTheme, getHue, getStoredTheme, setHue, setTheme} from "../utils/setting-utils";
 import {pathsEqual, url} from "../utils/url-utils";
 import {
 	BANNER_HEIGHT,
@@ -466,6 +466,10 @@ const setup = () => {
             }
         }, 200)
 	});
+	window.swup.hooks.on('animation:in:end', () => {
+		const mode = getStoredTheme();
+		applyMermaidDarkTheme(mode);
+	})
 }
 if (window?.swup?.hooks) {
 	setup()
@@ -526,6 +530,7 @@ window.onresize = () => {
 <script>
 import PhotoSwipeLightbox from "photoswipe/lightbox"
 import "photoswipe/style.css"
+import {applyMermaidDarkTheme} from "@utils/setting-utils.ts";
 
 let lightbox: PhotoSwipeLightbox
 let pswp = import("photoswipe")
