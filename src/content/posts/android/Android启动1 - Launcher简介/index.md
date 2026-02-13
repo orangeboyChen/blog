@@ -3,7 +3,7 @@ title: Android启动1 - Launcher简介
 id: android-boot-launcher-introduction
 published: 2026-02-12 14:58:00
 description: ''
-image: ''
+image: ./img/android.png
 tags: [Android, Android启动]
 category: 开发
 ---

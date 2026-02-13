@@ -3,7 +3,7 @@ title: Android启动0 - 前言
 id: android-boot-introduction
 published: 2026-02-12 14:55:00
 description: ''
-image: ''
+image: ./img/android.png
 tags: [Android, Android启动]
 category: 开发
 ---
