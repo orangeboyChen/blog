@@ -1,6 +1,6 @@
 ---
 title: Android启动4 - APP进程
-id: a04
+id: android-boot-app-process
 published: 2026-02-12 15:01:00
 description: ''
 image: ''
@@ -402,4 +402,3 @@ APP属于子进程，因此`pid`为0，接着会走进`handleChildProc`
 注意，这里是APP进程的`ZygoteInit`，直接调用`RuntimeInit.applicationInit`。`RuntimeInit.applicationInit`我们刚刚已经看过了，就是取entrypoint的static main方法并返回，这里会直接启动`ActivityThread`的main方法。
 
 ### ActivityThread
-

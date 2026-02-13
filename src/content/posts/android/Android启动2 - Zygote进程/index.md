@@ -1,6 +1,6 @@
 ---
 title: Android启动2 - Zygote进程的创建
-id: 02
+id: android-boot-zygote-process
 published: 2026-02-12 14:59:00
 description: ''
 image: ''
