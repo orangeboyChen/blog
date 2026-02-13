@@ -1,12 +1,11 @@
 ---
-title: Android底层0-前言
-id: android-internals-00-introduction
-published: 2026-02-12 14:58:00
+title: Android启动0 - 前言
+id: android-boot-introduction
+published: 2026-02-12 14:55:00
 description: ''
 image: ''
 tags: [Android]
 category: 开发
-draft: true
 ---
 
 这个是我新开的专栏。其实这方面的知识，我从2023年就开始学习了。但是因为这部分知识在工作中很少用到，并且我日常的主力机型是iPhone，导致这里的知识一直处于学了忘、忘了学的状态。
