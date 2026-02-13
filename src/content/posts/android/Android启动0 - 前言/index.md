@@ -4,7 +4,7 @@ id: android-boot-introduction
 published: 2026-02-12 14:55:00
 description: ''
 image: ''
-tags: [Android]
+tags: [Android, Android启动]
 category: 开发
 ---
 
