@@ -2,7 +2,7 @@
 title: Git的一些奇技淫巧
 published: 2023-10-23 10:50:24
 tags: [git]
-id: '620'
+id: git-tips-and-tricks
 comments: false
 category: 开发
 image: ./img/git.jpg

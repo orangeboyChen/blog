@@ -2,7 +2,7 @@
 title: Go初探 (3) – 基础语句
 published: 2020-10-30 15:44:12
 tags: [Go]
-id: '448'
+id: go-intro-3-basic-statements
 category: 开发
 ---
 

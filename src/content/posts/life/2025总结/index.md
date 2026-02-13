@@ -2,7 +2,7 @@
 title: 2025总结
 published: 2025-12-31 21:47:46
 tags: [年度总结]
-id: '944'
+id: 2025-year-in-review
 category: 生活
 image: ./img/u22523009562214851030fm253fmtautoapp138.webp
 ---

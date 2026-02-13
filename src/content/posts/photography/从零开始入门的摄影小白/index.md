@@ -2,7 +2,7 @@
 title: 从零开始入门的摄影小白
 published: 2020-06-24 02:24:21
 tags: []
-id: '38'
+id: photography-beginners-guide
 category: 摄影
 image: ./img/2-13.jpg
 ---

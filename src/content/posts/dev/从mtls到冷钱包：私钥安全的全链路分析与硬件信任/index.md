@@ -2,7 +2,7 @@
 title: 从 mTLS 到冷钱包：私钥安全的全链路分析与硬件信任边界
 published: 2025-10-30 15:56:02
 tags: [mTLS, 区块链]
-id: '931'
+id: mtls-to-cold-wallet-key-security-and-hardware-trust
 image: ./img/0a5375760d9173073f7c663d0b4fc141.jpg
 category: 开发
 ---
@@ -66,7 +66,7 @@ Security Enclave（SEP）是单独的元器件，有自己的SoC、内存，甚�
 
 对于安卓，现代的安卓设备，一般会有TEE或StrongBox。实现原理和iOS的SEP可能不相同，但大体原理是一致的。
 
-::url-card{url="https://source.android.com/docs/security/best-practices/hardware"}
+::url-card{url="https://source.android.com/docs/security/best-practices/hardware?hl=en"}
 
 那为什么需要硬件密钥呢？硬件密钥是一切生物识别支付的基石。以FaceID支付为例，简单来说，以下是支付过程：
 

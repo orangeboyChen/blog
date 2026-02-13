@@ -2,7 +2,7 @@
 title: Jenkins + Maven + Github/Gitlab + Springboot/Vue.js 实现自动化部署
 published: 2020-09-01 17:32:53
 tags: ['CI/CD']
-id: '318'
+id: jenkins-maven-github-gitlab-springboot-vue-automation-deploy
 image: ./img/u17860265912745054076fm26gp0.png
 category: 开发
 ---

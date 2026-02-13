@@ -2,7 +2,7 @@
 title: Hello blog.
 published: 2020-06-24 02:20:56
 tags: []
-id: '51'
+id: hello-blog
 category: 生活
 ---
 

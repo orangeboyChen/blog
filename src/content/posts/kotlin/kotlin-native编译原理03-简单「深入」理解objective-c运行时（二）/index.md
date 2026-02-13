@@ -1,5 +1,6 @@
 ---
 title: Kotlin Native编译原理03 - 简单「深入」理解Objective-C运行时（二）
+id: kotlin-native-compiler-03-objective-c-runtime-2
 published: 2026-02-10 13:17:00
 description: ''
 image: ./img/1_iDQ77Lohz3F3tx2Fml1msg.png
@@ -7,7 +8,7 @@ tags: [Kotlin, iOS]
 category: 开发
 ---
 
-> 其实上一篇文章[《Kotlin Native编译原理02 - 简单「深入」理解Objective-C运行时（一）》](/posts/kotlin/kotlin-native编译原理02-简单深入理解objective-c运行时一/)写完后，这篇文章就立马开始写了。但是在写文章的那段时间，有很多活动，所以写文章的事情也渐渐耽搁了下来，直到最近。
+> 其实上一篇文章[《Kotlin Native编译原理02 - 简单「深入」理解Objective-C运行时（一）》](/posts/kotlin-native-compiler-02-objective-c-runtime-1/)写完后，这篇文章就立马开始写了。但是在写文章的那段时间，有很多活动，所以写文章的事情也渐渐耽搁了下来，直到最近。
 >
 > 上一篇文章写完后，我就在思考，写的文章是不是跑题了？明明我要讲的是“运行时”，为什么会牵涉到很多内核甚至指令集的知识？但是事实就是这么有意思，“运行时”确实是底层原理息息相关。
 

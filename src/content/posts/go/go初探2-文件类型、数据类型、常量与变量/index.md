@@ -2,7 +2,7 @@
 title: Go初探 (2) - 文件类型、数据类型、常量与变量
 published: 2020-10-23 15:54:43
 tags: [Go]
-id: '440'
+id: go-intro-2-types-constants-variables
 category: 开发
 ---
 

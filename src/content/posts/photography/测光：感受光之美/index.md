@@ -2,7 +2,7 @@
 title: 测光：感受光之美
 published: 2020-06-28 14:37:04
 tags: []
-id: '311'
+id: metering-the-beauty-of-light
 category: 摄影
 ---
 
