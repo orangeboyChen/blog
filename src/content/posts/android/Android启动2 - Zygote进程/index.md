@@ -3,10 +3,9 @@ title: Android启动2 - Zygote进程的创建
 id: android-boot-zygote-process
 published: 2026-02-12 14:59:00
 description: ''
-image: ''
-tags: [Android]
+image: ./img/android.png
+tags: [Android, Android启动]
 category: 开发
-draft: true
 ---
 
 ## Zygote的创建
@@ -69,7 +68,7 @@ int main(int argc, char** argv) {
 }
 ```
 
-恭喜你，发现了Android大名鼎鼎的**多阶段启动**
+恭喜你，发现了Android大名鼎鼎的**多阶段启动**。
 
 ### 多阶段启动
 
@@ -469,7 +468,7 @@ void AndroidRuntime::start(const char* className, const Vector<String8>& options
 
 1. 初始化`libart.so` （`jni_invocation.Init(NULL);`）
 2. 初始化ART虚拟机（`startVm(&mJavaVM, &env, zygote, primary_zygote)`）
-3. 通过反射找到传入classpath的main函数并执行
+3. 通过反射找到传入classpath的`main`函数并执行
 
 而`JniInvocation` 到底做了什么呢？
 
@@ -552,3 +551,5 @@ flowchart LR
   C --> D["初始化运行时 (ART)"]
   D --> E["进入 com.android.internal.os.ZygoteInit.main"]
 ```
+
+本章描述了Android系统从Init进程启动到`Zygote`进程的创建。接下来的几张，我们会重点来讲，`Zygote`进程到底做了什么。
