@@ -1,10 +1,10 @@
 ---
 title: Android启动3 -SystemServer进程
 id: android-boot-systemserver-process
-published: 2026-02-12 15:00:00
+published: 2026-03-02 14:35:00
 description: ''
-image: ''
-tags: [Android]
+image: ./img/android.png
+tags: [Android, Android启动]
 category: 开发
 draft: true
 ---
@@ -629,7 +629,7 @@ String args[] = {
 
 当然，我这里先mark下几点：
 
-- `WindowManagerService` - `WindowManagerService`也是在这里做的初始化，是Android的窗口调度中心。Android里的界面显示、Window层级、动画、多窗口等都由它来控制。也成为WMS。
+- `WindowManagerService` - `WindowManagerService`是Android的窗口调度中心。Android里的界面显示、Window层级、动画、多窗口等都由它来控制。也成为WMS。
 - `mActivityManagerService` - 大名鼎鼎的`ActivityManagerService`，或称`AMS`，负责应用生命周期、进程管理和任务栈调度的核心系统服务。
 
 `mActivityManagerService` 是怎么初始化的？在`startBootstrapServices`就会初始化：
