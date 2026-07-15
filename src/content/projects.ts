@@ -48,7 +48,7 @@ export const projectTimeline: TimelineEntry[] = [
 					},
 					{
 						name: "美团生活助手",
-						description: "从WorkBuddy移值，让云Agent也支持美团生活助手",
+						description: "从 WorkBuddy 移植，让云端 Agent 也能调用美团生活助手。",
 						tech: ["icon:fa6-brands:js"],
 						url: "https://github.com/orangeboyChen/meituan-living-assistant",
 					},
@@ -65,7 +65,7 @@ export const projectTimeline: TimelineEntry[] = [
 					{
 						name: "Luckin Extended MCP",
 						description:
-							"瑞幸优惠券、余额和支付能力的 MCP 服务，让自动支付、AI自动买咖啡成为可能。",
+							"提供瑞幸优惠券、余额和支付能力的 MCP 服务，支持自动支付与 AI 自动买咖啡。",
 						tech: [
 							"icon:fa6-brands:golang",
 							"icon:simple-icons:modelcontextprotocol",
@@ -77,7 +77,7 @@ export const projectTimeline: TimelineEntry[] = [
 					{
 						name: "Portfolio Insight MCP",
 						description:
-							"连接 Wealthfolio 持仓数据与 AI Agent，让 AI 了解我的投资组合。",
+							"连接 Wealthfolio 持仓数据与 AI Agent，让 AI 了解投资组合。",
 						tech: [
 							"icon:fa6-brands:golang",
 							"icon:simple-icons:modelcontextprotocol",
@@ -98,13 +98,13 @@ export const projectTimeline: TimelineEntry[] = [
 						url: "https://github.com/orangeboyChen/ha-meituan-delivery",
 					},
 					{
-						name: "万和热水器Home Assistant 集成",
+						name: "万和热水器 Home Assistant 集成",
 						description: "万和热水器 Home Assistant 自定义集成",
 						tech: ["icon:fa6-brands:python", "icon:simple-icons:homeassistant"],
 						url: "https://github.com/orangeboyChen/ha-vanward-water-heater",
 					},
 					{
-						name: "京东智能空调Home Assistant 集成",
+						name: "京东智能空调 Home Assistant 集成",
 						description: "空调控制、状态与令牌刷新集成",
 						tech: ["icon:fa6-brands:python", "icon:simple-icons:homeassistant"],
 						url: "https://github.com/orangeboyChen/ha-jd-smart",
@@ -118,7 +118,7 @@ export const projectTimeline: TimelineEntry[] = [
 					{
 						name: "Market Crawl",
 						description:
-							"基金及产品净值数据查询服务。为了让Wealthfolio接入，获取基金及产品净值数据。",
+							"为 Wealthfolio 提供基金及产品净值数据查询服务。",
 						tech: [
 							"icon:fa6-brands:golang",
 							"icon:fa6-brands:docker",
@@ -138,13 +138,13 @@ export const projectTimeline: TimelineEntry[] = [
 					},
 					{
 						name: "Server Enhanced Mod",
-						description: "为Minecraft提供 Prometheus 指标和自定义指令",
+						description: "为 Minecraft 提供 Prometheus 指标和自定义指令。",
 						tech: ["icon:simple-icons:kotlin", "icon:simple-icons:prometheus"],
 						url: "https://github.com/orangeboyChen/mc-server-enhanced-mod",
 					},
 					{
 						name: "WechatPay Cli",
-						description: "从WorkBuddy移植，云Agent使用微信支付的探索。",
+						description: "从 WorkBuddy 移植，探索云端 Agent 使用微信支付的方式。",
 						tech: ["icon:fa6-brands:js", "icon:material-symbols:terminal"],
 						url: "https://github.com/orangeboyChen/wechatpay-cli",
 					},
@@ -157,7 +157,7 @@ export const projectTimeline: TimelineEntry[] = [
 					{
 						name: "Ham Workspace",
 						description:
-							"Ham 后端、客户端与 API 协议的协作工作区，方便AI进行前后端联合开发。",
+							"Ham 后端、客户端与 API 协议的协作工作区，支持 AI 协助前后端联合开发。",
 						tech: [],
 						url: "https://github.com/whu-ham/ham-workspace",
 					},
@@ -184,7 +184,7 @@ export const projectTimeline: TimelineEntry[] = [
 					},
 					{
 						name: "Ham Proto",
-						description: "Ham 服务与客户端共享的 Protocol 定义",
+						description: "Ham 服务与客户端共享的 Protocol Buffers 定义",
 						tech: ["icon:devicon:grpc"],
 						url: "https://github.com/whu-ham/ham-proto",
 					},
@@ -198,7 +198,7 @@ export const projectTimeline: TimelineEntry[] = [
 			{
 				title: "Ham 继续探索",
 				description:
-					"包含Ham Web、Rust与WebAssembly的尝试，以及多协议Go后端的实践。",
+					"包含 Ham Web、Rust 与 WebAssembly 的尝试，以及多协议 Go 后端的实践。",
 				projects: [
 					{
 						name: "Ham Web",
@@ -215,7 +215,7 @@ export const projectTimeline: TimelineEntry[] = [
 					{
 						name: "Ham Backend Go",
 						description:
-							"Ham 的多协议 Go 后端，覆盖 gRPC、HTTP、MCP。与老版客户端相比，内存占用下降了90%，并发能力也极大增强。并且强制要求单测覆盖率，提升了代码质量。",
+							"Ham 的多协议 Go 后端，覆盖 gRPC、HTTP 与 MCP。相较老版客户端，内存占用下降 90%，并发能力显著增强；同时通过单元测试覆盖率要求提升代码质量。",
 						tech: ["icon:fa6-brands:golang"],
 						url: "https://github.com/whu-ham/ham-backend-go",
 					},
@@ -229,7 +229,7 @@ export const projectTimeline: TimelineEntry[] = [
 			{
 				title: "Ham 动态化能力探索",
 				description:
-					"为 Ham 客户端探索动态化能力，尝试 React Native，避免频繁发布新版本，提升开发效率。",
+					"为 Ham 客户端探索动态化能力，尝试 React Native，以减少频繁发布新版本的成本。",
 				projects: [
 					{
 						name: "Ham React Native",
@@ -279,7 +279,7 @@ export const projectTimeline: TimelineEntry[] = [
 					{
 						name: "电动车小程序后端",
 						description:
-							"尝试解决校内电动车充电桩数量不足的问题，让同学们有序充电。这是Spring Boot、Redis 与 Kotlin Gradle 的服务端实践",
+							"尝试解决校内电动车充电桩数量不足的问题，让同学们有序充电；基于 Spring Boot、Redis 与 Kotlin Gradle 构建。",
 						tech: [
 							"icon:simple-icons:spring",
 							"icon:simple-icons:mysql",
@@ -295,8 +295,8 @@ export const projectTimeline: TimelineEntry[] = [
 				description: "菜谱服务的移动端与服务端实践。",
 				projects: [
 					{
-						name: "厨方iOS",
-						description: "厨方的 SwiftUI 客户端",
+						name: "厨方 iOS",
+						description: "厨方的 SwiftUI 客户端。",
 						tech: ["icon:fa6-brands:apple", "icon:fa6-brands:swift"],
 						url: "https://github.com/orangeboyChen/cooking_frontend",
 					},
@@ -354,7 +354,7 @@ export const projectTimeline: TimelineEntry[] = [
 					{
 						name: "Ham iOS",
 						description:
-							"混合 iOS 客户端，覆盖 iOS、与 watchOS，动态部分由 React Native 实现，其他由 SwiftUI 与 Swift 实现。",
+							"混合 iOS 客户端，覆盖 iOS 与 watchOS；动态部分由 React Native 实现，其余部分由 SwiftUI 与 Swift 实现。",
 						tech: [
 							"icon:fa6-brands:apple",
 							"icon:fa6-brands:react",
@@ -365,14 +365,14 @@ export const projectTimeline: TimelineEntry[] = [
 					{
 						name: "Ham Android",
 						description:
-							"混合 Android 客户端，动态部分由 React Native 实现，其他由Android原生实现。早期使用Java+Android XML编写，后期逐渐迁移至Kotlin+Jetpack Compose。",
+							"混合 Android 客户端：动态部分由 React Native 实现，其余部分采用原生 Android；早期使用 Java 与 Android XML，后期逐步迁移至 Kotlin 与 Jetpack Compose。",
 						tech: ["icon:fa6-brands:android", "icon:simple-icons:kotlin"],
 						url: "https://github.com/whu-ham/ham-android",
 					},
 					{
 						name: "Ham Backend",
 						description:
-							"早期服务端，基于SpringBoot与MyBatis的HTTP Java服务，后期逐渐迁移至GRPC与Kotlin。",
+							"早期服务端，基于 Spring Boot 与 MyBatis 构建 HTTP Java 服务，后期逐步迁移至 gRPC 与 Kotlin。",
 						tech: ["icon:simple-icons:kotlin"],
 						url: "https://github.com/orangeboyChen/Ham-backend",
 					},
@@ -385,13 +385,13 @@ export const projectTimeline: TimelineEntry[] = [
 					{
 						name: "手写操作系统",
 						description:
-							"操作系统课程项目，使用 C 语言和汇编语言实现了一个简单的操作系统，实现窗体折叠、窗体透明折叠布局，并对外提供API，支持第三方应用接入系统。",
+							"操作系统课程项目，使用 C 语言和汇编语言实现简单操作系统，支持窗口折叠、透明布局，并提供 API 供第三方应用接入。",
 						tech: ["icon:material-symbols:memory"],
 						url: "https://github.com/orangeboyChen/handmade_operating_system",
 					},
 					{
 						name: "新闻查看器",
-						description: "iOS APP，移动编程课程期末项目",
+						description: "iOS App，移动编程课程期末项目。",
 						tech: ["icon:fa6-brands:apple", "icon:fa6-brands:swift"],
 						url: "https://github.com/orangeboyChen/WHU_iOS_exam_news",
 					},
@@ -403,9 +403,9 @@ export const projectTimeline: TimelineEntry[] = [
 		year: "2020",
 		sections: [
 			{
-				title: "汉姆 · Ham的前身",
+				title: "汉姆 · Ham 的前身",
 				description:
-					"武汉大学生活助手Ham的前身，涵盖跑步计划、图书馆预约和体育场馆预约。",
+					"武汉大学生活助手 Ham 的前身，涵盖跑步计划、图书馆预约和体育场馆预约。",
 				projects: [
 					{
 						name: "汉姆 Android",
@@ -423,7 +423,7 @@ export const projectTimeline: TimelineEntry[] = [
 			},
 			{
 				title: "竞赛的初次尝试",
-				description: "服创2020",
+				description: "2020 年服创比赛项目。",
 				projects: [
 					{
 						name: "服创路线规划",
@@ -439,7 +439,7 @@ export const projectTimeline: TimelineEntry[] = [
 				projects: [
 					{
 						name: "Volleyball",
-						description: "罗湖文体通排球场预定工具",
+						description: "罗湖文体通排球场预订工具。",
 						tech: ["icon:fa6-brands:android", "icon:fa6-brands:java"],
 						url: "https://github.com/orangeboyChen/volleyball",
 					},
@@ -477,7 +477,7 @@ export const projectTimeline: TimelineEntry[] = [
 					{
 						name: "青年大学习提交系统前端",
 						description:
-							"提交系统的 Web 端。早期使用原生JavaScript与BootStrap构建，后期迁移至Vue.js2框架。",
+							"提交系统的 Web 端：早期使用原生 JavaScript 与 Bootstrap 构建，后期迁移至 Vue 2。",
 						tech: ["icon:fa6-brands:vuejs", "icon:fa6-brands:js"],
 						url: "https://github.com/orangeboyChen/qndxx_front",
 					},
@@ -494,7 +494,7 @@ export const projectTimeline: TimelineEntry[] = [
 					},
 					{
 						name: "青年大学习提交系统服务端 v1",
-						description: "提交系统早期的服务端尝试，基于Java Servlet + JSP。",
+						description: "提交系统早期的服务端尝试，基于 Java Servlet 与 JSP。",
 						tech: ["icon:fa6-brands:java"],
 						url: "https://github.com/orangeboyChen/qndxx",
 					},
@@ -507,7 +507,7 @@ export const projectTimeline: TimelineEntry[] = [
 					{
 						name: "Nowcent",
 						description:
-							"基于TCP的即时通讯应用，涵盖一对一、一对多、发送表情功能。",
+							"基于 TCP 的即时通讯应用，支持一对一、一对多通信和表情发送。",
 						tech: ["icon:fa6-brands:android", "icon:fa6-brands:java"],
 						url: "https://github.com/orangeboyChen/nowcent",
 					},
