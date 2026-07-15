@@ -48,7 +48,8 @@ export const projectTimeline: TimelineEntry[] = [
 					},
 					{
 						name: "美团生活助手",
-						description: "从 WorkBuddy 移植，让云端 Agent 也能调用美团生活助手。",
+						description:
+							"从 WorkBuddy 移植，让云端 Agent 也能调用美团生活助手。",
 						tech: ["icon:fa6-brands:js"],
 						url: "https://github.com/orangeboyChen/meituan-living-assistant",
 					},
@@ -117,8 +118,7 @@ export const projectTimeline: TimelineEntry[] = [
 				projects: [
 					{
 						name: "Market Crawl",
-						description:
-							"为 Wealthfolio 提供基金及产品净值数据查询服务。",
+						description: "为 Wealthfolio 提供基金及产品净值数据查询服务。",
 						tech: [
 							"icon:fa6-brands:golang",
 							"icon:fa6-brands:docker",
@@ -144,7 +144,8 @@ export const projectTimeline: TimelineEntry[] = [
 					},
 					{
 						name: "WechatPay Cli",
-						description: "从 WorkBuddy 移植，探索云端 Agent 使用微信支付的方式。",
+						description:
+							"从 WorkBuddy 移植，探索云端 Agent 使用微信支付的方式。",
 						tech: ["icon:fa6-brands:js", "icon:material-symbols:terminal"],
 						url: "https://github.com/orangeboyChen/wechatpay-cli",
 					},
@@ -529,7 +530,7 @@ export const projectTimeline: TimelineEntry[] = [
 					"icon:simple-icons:adobedreamweaver",
 				],
 				description:
-					"从 Visual Basic 到 C、C#，再到 Android 开发。早期还做过 Dreamweaver 老裴肉串 Web、点名器和点按钮游戏；这些小作品是我开始持续写代码的起点。",
+					"从 Visual Basic 入门，逐步接触 C、C# 与 Android 开发。早期使用 Dreamweaver 完成的静态网站、使用 C# 编写的点名器和开发的 Android 小游戏，记录了最初的编程探索。",
 				projects: [],
 			},
 		],
