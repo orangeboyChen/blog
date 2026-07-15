@@ -37,9 +37,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Get playwright for mermaid stuff
-        run: npx playwright install --with-deps chromium
-
       - name: Run Astro Check
         run: pnpm astro check
 
@@ -67,7 +64,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Get playwright for mermaid stuff
-        run: npx playwright install --with-deps chromium
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Run Astro Build
         run: pnpm astro build
