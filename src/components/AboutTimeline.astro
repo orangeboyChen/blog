@@ -1,7 +1,7 @@
 ---
+import { resolveProjectTimeline } from "@utils/github-projects";
 import { Icon } from "astro-icon/components";
 import { projectTimeline } from "../content/projects";
-import { resolveProjectTimeline } from "@utils/github-projects";
 
 const resolvedTimeline = await resolveProjectTimeline(projectTimeline);
 const isGitHubProject = (url: string) => url.startsWith("https://github.com/");
@@ -9,7 +9,8 @@ const getGitHubOwner = (url: string) => {
 	if (!isGitHubProject(url)) return undefined;
 	return new URL(url).pathname.split("/")[1] || undefined;
 };
-const getTagIcon = (tag: string) => tag.startsWith("icon:") ? tag.slice("icon:".length) : undefined;
+const getTagIcon = (tag: string) =>
+	tag.startsWith("icon:") ? tag.slice("icon:".length) : undefined;
 ---
 
 <section class="about-timeline">

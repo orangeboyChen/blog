@@ -37,6 +37,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Install Chromium for Mermaid rendering
+        run: pnpm exec playwright install --with-deps chromium
+
       - name: Run Astro Check
         run: pnpm astro check
 
