@@ -17,12 +17,12 @@ export const siteConfig: SiteConfig = {
 	},
 	banner: {
 		enable: true,
-		src: "assets/images/demo-banner.png", // Relative to the /src directory. Relative to the /public directory if it starts with '/'
+		src: "https://www.bing.com/th?id=OHR.MarieLake_ZH-CN4927917413_1920x1080.jpg&rf=LaDigue_1920x1080.jpg&pid=hp",
 		position: "center", // Equivalent to object-position, only supports 'top', 'center', 'bottom'. 'center' by default
 		credit: {
-			enable: false, // Display the credit text of the banner image
-			text: "", // Credit text to be displayed
-			url: "", // (Optional) URL link to the original artwork or artist's page
+			enable: true, // Display the credit text of the banner image
+			text: "玛丽湖，约翰·缪尔荒野（© Steve Dunleavy/Getty Images）", // Credit text to be displayed
+			url: "https://www.bing.com/search?q=%E7%BA%A6%E7%BF%B0%C2%B7%E7%BC%AA%E5%B0%94%E8%8D%92%E9%87%8E&form=hpcapt&mkt=zh-cn", // (Optional) URL link to the original artwork or artist's page
 		},
 	},
 	toc: {

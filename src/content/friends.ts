@@ -1,4 +1,12 @@
-[
+export type Friend = {
+	title: string;
+	image: `https://${string}`;
+	desc: string;
+	url: `https://${string}`;
+	tags?: string[];
+};
+
+export const friends: Friend[] = [
 	{
 		"title": "清北博客",
 		"image": "https://blog.tsinbei.com/favicon.ico",
@@ -11,4 +19,4 @@
 		"desc": "为世界暂带来一些微小而有趣的东西",
 		"url": "https://www.saltroping.com"
 	}
-]
+];
