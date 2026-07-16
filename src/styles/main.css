@@ -177,6 +177,21 @@
     background-color: var(--float-panel-bg);
 }
 
+.navbar-search-panel {
+    left: calc(1rem + env(safe-area-inset-left));
+    right: calc(1rem + env(safe-area-inset-right));
+}
+
+.navbar-right-panel {
+    right: calc(1rem + env(safe-area-inset-right));
+}
+
+@media (min-width: 768px) {
+    .navbar-search-panel {
+        left: auto;
+    }
+}
+
 .navbar-surface {
     border-radius: 0 0 var(--radius-large) var(--radius-large);
     height: calc(4.5rem + env(safe-area-inset-top));
