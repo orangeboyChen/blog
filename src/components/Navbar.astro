@@ -21,12 +21,12 @@ let links: NavBarLink[] = navBarConfig.links.map(
 	},
 );
 ---
-<div id="navbar" class="navbar-shell z-50 onload-animation">
-    <div class="navbar-frosted navbar-entry-fill absolute h-8 left-0 right-0 -top-8 transition-colors"></div> <!-- used for onload animation -->
-    <div class="navbar-frosted navbar-safe-area" aria-hidden="true"></div>
+<div id="navbar" class="navbar-shell z-50">
+    <div class="navbar-frosted navbar-entry-fill absolute h-8 left-0 right-0 -top-8"></div>
+    <div class="navbar-frosted navbar-surface" aria-hidden="true"></div>
     <div class:list={[
         className,
-        "card-base navbar-frosted !overflow-visible max-w-[var(--page-width)] h-[4.5rem] !rounded-t-none mx-auto flex items-center justify-between px-4"]}>
+        "card-base navbar-content-surface !overflow-visible max-w-[var(--page-width)] h-[4.5rem] !rounded-t-none mx-auto flex items-center justify-between px-4"]}>
         <a href={url('/')} class="btn-plain scale-animation rounded-lg h-[3.25rem] px-5 font-bold active:scale-95">
             <div class="flex flex-row text-[var(--primary)] items-center text-md">
                 <Icon name="material-symbols:home-outline-rounded" class="text-[1.75rem] mb-1 mr-2" />
