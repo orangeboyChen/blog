@@ -4,6 +4,7 @@
     .card-base {
         @apply rounded-[var(--radius-large)] overflow-hidden bg-[var(--card-bg)] transition;
     }
+
     h1, h2, h3, h4, h5, h6, p, a, span, li, ul, ol, blockquote, code, pre, table, th, td, strong {
         @apply transition;
     }
@@ -149,4 +150,22 @@
         color: var(--codeblock-bg);
     }
   }
+}
+
+.navbar-shell {
+    padding-top: env(safe-area-inset-top);
+    position: relative;
+}
+
+.navbar-frosted {
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    backdrop-filter: blur(24px) saturate(150%);
+    background-color: color-mix(in srgb, var(--card-bg) 60%, transparent);
+}
+
+.navbar-safe-area {
+    height: env(safe-area-inset-top);
+    inset: 0 0 auto;
+    pointer-events: none;
+    position: absolute;
 }
