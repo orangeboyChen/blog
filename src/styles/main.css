@@ -4,6 +4,7 @@
     .card-base {
         @apply rounded-[var(--radius-large)] overflow-hidden bg-[var(--card-bg)] transition;
     }
+
     h1, h2, h3, h4, h5, h6, p, a, span, li, ul, ol, blockquote, code, pre, table, th, td, strong {
         @apply transition;
     }
@@ -21,7 +22,8 @@
         @apply transition rounded-md p-1.5 -m-1.5 expand-animation;
     }
     .float-panel {
-        @apply top-[5.25rem] rounded-[var(--radius-large)] overflow-hidden bg-[var(--float-panel-bg)] transition shadow-xl dark:shadow-none
+        @apply rounded-[var(--radius-large)] overflow-hidden bg-[var(--float-panel-bg)] transition shadow-xl dark:shadow-none;
+        top: calc(5.25rem + env(safe-area-inset-top));
     }
     .float-panel-closed {
         @apply -translate-y-1 opacity-0 pointer-events-none
@@ -149,4 +151,57 @@
         color: var(--codeblock-bg);
     }
   }
+}
+
+.navbar-shell {
+    padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
+    padding-top: env(safe-area-inset-top);
+    position: relative;
+}
+
+.navbar-frosted {
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    backdrop-filter: blur(24px) saturate(150%);
+    background-color: color-mix(in srgb, var(--card-bg) 60%, transparent);
+}
+
+.card-base {
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    backdrop-filter: blur(24px) saturate(150%);
+    background-color: color-mix(in srgb, var(--card-bg) 60%, transparent);
+}
+
+.float-panel {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background-color: var(--float-panel-bg);
+}
+
+.navbar-search-panel {
+    left: calc(1rem + env(safe-area-inset-left));
+    right: calc(1rem + env(safe-area-inset-right));
+}
+
+.navbar-right-panel {
+    right: calc(1rem + env(safe-area-inset-right));
+}
+
+@media (min-width: 768px) {
+    .navbar-search-panel {
+        left: auto;
+    }
+}
+
+.navbar-surface {
+    border-radius: 0 0 var(--radius-large) var(--radius-large);
+    height: calc(4.5rem + env(safe-area-inset-top));
+    inset: 0 0 auto;
+    pointer-events: none;
+    position: absolute;
+    transform: translateZ(0);
+    will-change: backdrop-filter;
+}
+
+.navbar-content-surface {
+    background-color: transparent;
 }
