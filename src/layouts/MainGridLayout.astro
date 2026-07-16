@@ -53,6 +53,12 @@ const mainPanelTop = siteConfig.banner.enable
     </div>
 </div>
 
+<script is:inline>
+    if (/iPhone|iPod/.test(navigator.userAgent)) {
+        document.getElementById("navbar-wrapper")?.classList.remove("sticky", "top-0");
+    }
+</script>
+
 <!-- Banner -->
 {siteConfig.banner.enable && <div id="banner-wrapper" class={`absolute z-10 w-full transition duration-700 overflow-hidden`} style={`top: -${BANNER_HEIGHT_EXTEND}vh`}>
     <ImageWrapper id="banner" alt="Banner image of the blog" class:list={["object-cover h-full transition duration-700 scale-105"]}
