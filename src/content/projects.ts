@@ -93,7 +93,7 @@ export const projectTimeline: TimelineEntry[] = [
 				description: "为真实生活设备和服务补齐自动化能力。",
 				projects: [
 					{
-						name: "美团外卖Home Assistant 集成",
+						name: "美团外卖 Home Assistant 集成",
 						description: "订单、配送状态与通知的 Home Assistant 集成",
 						tech: ["icon:fa6-brands:python", "icon:simple-icons:homeassistant"],
 						url: "https://github.com/orangeboyChen/ha-meituan-delivery",
@@ -105,10 +105,16 @@ export const projectTimeline: TimelineEntry[] = [
 						url: "https://github.com/orangeboyChen/ha-vanward-water-heater",
 					},
 					{
-						name: "京东智能空调 Home Assistant 集成",
-						description: "空调控制、状态与令牌刷新集成",
+						name: "京东小家 Home Assistant 集成",
+						description: "京东小家设备控制、状态与令牌刷新集成",
 						tech: ["icon:fa6-brands:python", "icon:simple-icons:homeassistant"],
 						url: "https://github.com/orangeboyChen/ha-jd-smart",
+					},
+					{
+						name: "LobeHub Home Assistant 集成",
+						description: "将 LobeHub Agent 与会话接入 Home Assistant",
+						tech: ["icon:fa6-brands:python", "icon:simple-icons:homeassistant"],
+						url: "https://github.com/orangeboyChen/ha-lobehub",
 					},
 				],
 			},
