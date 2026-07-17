@@ -110,6 +110,12 @@ export const projectTimeline: TimelineEntry[] = [
 						tech: ["icon:fa6-brands:python", "icon:simple-icons:homeassistant"],
 						url: "https://github.com/orangeboyChen/ha-jd-smart",
 					},
+					{
+						name: "LobeHub Home Assistant 集成",
+						description: "将 LobeHub Agent 与会话接入 Home Assistant",
+						tech: ["icon:fa6-brands:python", "icon:simple-icons:homeassistant"],
+						url: "https://github.com/orangeboyChen/ha-lobehub",
+					},
 				],
 			},
 			{
